@@ -183,6 +183,15 @@
 .workforce-tabs :is(button, a):hover {
   background: #edf2f9;
 }
+.workforce-tab-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 13px;
+  min-height: 44px;
+  color: var(--muted);
+  font-weight: 600;
+}
 .workforce-subtabs {
   margin-top: 5px;
 }

@@ -7,19 +7,7 @@ export const accessRoles = {
 } as const;
 
 export type AccessRole = string;
-export type PermissionCode =
-  | "attendance_view_own"
-  | "attendance_mark"
-  | "tasks_view_own"
-  | "tasks_update_own"
-  | "team_view"
-  | "attendance_view_team"
-  | "tasks_view_team"
-  | "tasks_assign"
-  | "tasks_cancel"
-  | "people_manage"
-  | "access_manage"
-  | "roles_manage";
+export type PermissionCode = string;
 export type TaskStatus = "pending" | "in_progress" | "done" | "cancelled";
 
 export interface RoleDefinition {
@@ -36,7 +24,18 @@ export interface PermissionDefinition {
   name: string;
   description: string;
   category: "personal" | "team" | "administration";
+  module?: string;
   sort_order: number;
+}
+
+export interface AvailabilityInterval {
+  id?: string;
+  person_id?: string;
+  weekday: number;
+  start_time: string;
+  end_time: string;
+  slot_order: number;
+  active: boolean;
 }
 
 export interface Person {
@@ -48,11 +47,14 @@ export interface Person {
 }
 
 export interface DirectoryPerson extends Person {
+  email?: string | null;
   identifier_hash: string | null;
   identifier_last_four: string | null;
   supervisor_id: string | null;
   active: boolean;
   registered: boolean;
+  permissions?: PermissionCode[];
+  availability?: AvailabilityInterval[];
 }
 
 export interface Shift {

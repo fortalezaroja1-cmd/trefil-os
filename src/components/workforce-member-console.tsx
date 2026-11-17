@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Clock3,
   Copy,
+  Link2,
   MoreHorizontal,
   Plus,
   ShieldCheck,
@@ -81,6 +82,8 @@ export function WorkforceMemberConsole({
   const [selectedId, setSelectedId] = useState(snapshot.me.id);
   const [drawer, setDrawer] = useState<DirectoryPerson | "new" | null>(null);
   const [created, setCreated] = useState<{ name: string } | null>(null);
+  const [invite, setInvite] = useState<{ name: string; link: string } | null>(null);
+  const [loginCopied, setLoginCopied] = useState(false);
   const [removing, setRemoving] = useState<DirectoryPerson | null>(null);
   const people = snapshot.people;
   const selected = people.find((person) => person.id === selectedId) ?? people[0];
@@ -90,6 +93,24 @@ export function WorkforceMemberConsole({
       setSelectedId(people[0].id);
     }
   }, [people, selectedId]);
+
+  useEffect(() => setLoginCopied(false), [selectedId]);
+
+  function createPrivateLink(person: DirectoryPerson) {
+    void perform(async (client) => {
+      const { data, error } = await client.functions.invoke<{ link: string }>("workforce-invite", {
+        body: { action: "link", personId: person.id },
+      });
+      if (error || !data?.link)
+        throw new WorkforceError("No pudimos crear el enlace privado. Intenta de nuevo.");
+      setInvite({ name: person.full_name, link: data.link });
+    }, "Enlace privado preparado.", false);
+  }
+
+  async function copyLoginLink() {
+    await navigator.clipboard.writeText(new URL("/equipo/", window.location.origin).href);
+    setLoginCopied(true);
+  }
 
   if (!selected) {
     return (
@@ -160,6 +181,9 @@ export function WorkforceMemberConsole({
             busy={busy}
             edit={() => setDrawer(selected)}
             remove={() => setRemoving(selected)}
+            copyLogin={() => void copyLoginLink()}
+            loginCopied={loginCopied}
+            createLink={() => createPrivateLink(selected)}
           />
           <AvailabilityEditor person={selected} busy={busy} perform={perform} />
           <section className="member-tasks-panel">
@@ -192,6 +216,7 @@ export function WorkforceMemberConsole({
         />
       )}
       {created && <AccessCreatedResult result={created} close={() => setCreated(null)} />}
+      {invite && <PrivateLinkResult result={invite} close={() => setInvite(null)} />}
       {removing && (
         <RemoveMemberDialog
           person={removing}
@@ -216,6 +241,9 @@ function MemberDetailHeader({
   busy,
   edit,
   remove,
+  copyLogin,
+  loginCopied,
+  createLink,
 }: {
   person: DirectoryPerson;
   roles: RoleDefinition[];
@@ -224,6 +252,9 @@ function MemberDetailHeader({
   busy: boolean;
   edit: () => void;
   remove: () => void;
+  copyLogin: () => void;
+  loginCopied: boolean;
+  createLink: () => void;
 }) {
   const granted = effectivePermissions(person, roles);
   const modules = new Set(
@@ -250,6 +281,8 @@ function MemberDetailHeader({
         </div>
       </div>
       <div className="member-profile-actions">
+        <button className="button button-secondary" disabled={busy} onClick={copyLogin}><Copy size={16} /> {loginCopied ? "Enlace copiado" : "Copiar ingreso"}</button>
+        <button className="button button-secondary" disabled={busy} onClick={createLink}><Link2 size={16} /> Enlace privado</button>
         {!self && <button className="button member-danger-button" disabled={busy} onClick={remove}><Trash2 size={16} /> Eliminar usuario</button>}
         <button className="button button-secondary" disabled={busy} onClick={edit}>
           {person.access_role === "admin" && self ? "Revisar control total" : "Editar usuario"}
@@ -381,9 +414,9 @@ function MemberDrawer({
     const personId = person?.id ?? crypto.randomUUID();
     void perform(async (client) => {
       const password = String(fields.get("password") ?? "");
-      if (!person && password.length < 6)
+      if ((!person || password) && password.length < 6)
         throw new WorkforceError("La contraseña debe tener al menos 6 caracteres por el requisito técnico del acceso.");
-      if (!person && password !== String(fields.get("confirm") ?? ""))
+      if ((!person || password) && password !== String(fields.get("confirm") ?? ""))
         throw new WorkforceError("Las contraseñas no coinciden.");
       const documentNumber = String(fields.get("document") ?? "");
       const identity = documentNumber
@@ -417,6 +450,13 @@ function MemberDrawer({
           throw new WorkforceError("El perfil se guardó, pero no pudimos crear su acceso. Elimínalo y vuelve a crearlo.");
         created(name);
       } else {
+        if (password) {
+          const { data, error } = await client.functions.invoke<{ passwordUpdated: boolean }>("workforce-invite", {
+            body: { action: "password", personId, password },
+          });
+          if (error || data?.passwordUpdated !== true)
+            throw new WorkforceError("Los datos se guardaron, pero no pudimos asignar la nueva contraseña. Intenta de nuevo.");
+        }
         close();
       }
     }, person ? "Usuario y permisos actualizados." : "Usuario creado.");
@@ -433,8 +473,8 @@ function MemberDrawer({
             <Field label="Número de cédula" hint={person ? "Déjalo vacío para conservar la cédula registrada." : "Será su usuario de ingreso; no se guardará el número completo."}><input name="document" inputMode="numeric" required={!person} disabled={person?.registered} /></Field>
             <Field label="Cargo"><input name="title" required minLength={2} maxLength={120} defaultValue={person?.job_title} /></Field>
             <Field label="Área"><input name="area" required minLength={2} maxLength={120} defaultValue={person?.area} /></Field>
-            {!person && <Field label="Contraseña inicial" hint="Tú defines la clave. Mínimo técnico: 6 caracteres; sin obligación de mayúsculas, números o símbolos."><input name="password" type="password" required minLength={6} maxLength={256} autoComplete="new-password" /></Field>}
-            {!person && <Field label="Repetir contraseña"><input name="confirm" type="password" required minLength={6} maxLength={256} autoComplete="new-password" /></Field>}
+            <Field label={person ? "Asignar nueva contraseña" : "Contraseña inicial"} hint={person ? "Opcional. Si la dejas vacía, la contraseña actual no cambia." : "Tú defines la clave. Mínimo técnico: 6 caracteres; sin obligación de mayúsculas, números o símbolos."}><input name="password" type="password" required={!person} minLength={6} maxLength={256} autoComplete="new-password" /></Field>
+            <Field label={person ? "Repetir nueva contraseña" : "Repetir contraseña"}><input name="confirm" type="password" required={!person} minLength={6} maxLength={256} autoComplete="new-password" /></Field>
           </div>
 
           <section className="member-role-section">
@@ -485,6 +525,22 @@ function AccessCreatedResult({ result, close }: { result: { name: string }; clos
         <h2>Usuario y clave listos</h2>
         <p>{result.name} puede entrar de inmediato con su número de cédula y la contraseña que acabas de definir. Compártelos únicamente por un canal privado.</p>
         <button className="button button-primary" onClick={async () => { await navigator.clipboard.writeText(new URL("/equipo/", window.location.origin).href); setCopied(true); }}><Copy size={16} /> {copied ? "Enlace copiado" : "Copiar enlace de ingreso"}</button>
+        <button className="button button-secondary" onClick={close}>Cerrar</button>
+      </section>
+    </div>
+  );
+}
+
+function PrivateLinkResult({ result, close }: { result: { name: string; link: string }; close: () => void }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="member-drawer-backdrop">
+      <section className="member-invite-result" role="dialog" aria-modal="true" aria-labelledby="private-link-title">
+        <span className="member-success"><Link2 size={25} /></span>
+        <h2 id="private-link-title">Enlace privado listo</h2>
+        <p>Envíalo únicamente a {result.name}. Al abrirlo podrá crear o restablecer su contraseña y luego ingresar con su cédula.</p>
+        <Field label="Enlace de activación"><input value={result.link} readOnly onFocus={(event) => event.target.select()} /></Field>
+        <button className="button button-primary" onClick={async () => { await navigator.clipboard.writeText(result.link); setCopied(true); }}><Copy size={16} /> {copied ? "Enlace copiado" : "Copiar enlace privado"}</button>
         <button className="button button-secondary" onClick={close}>Cerrar</button>
       </section>
     </div>

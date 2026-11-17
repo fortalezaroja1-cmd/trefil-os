@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { WorkforceApp } from "@/components/workforce-app";
-import "./workforce.css";
 
 export const metadata: Metadata = {
   title: "Equipo · Trefil OS",

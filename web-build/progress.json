@@ -1,0 +1,323 @@
+{
+  "schema_version": 1,
+  "project_id": "trefil-os",
+  "name": "Trefil OS",
+  "profile": "portal",
+  "target": "https://project-kmpca.vercel.app",
+  "created_at": "2026-11-17T19:24:57+00:00",
+  "updated_at": "2026-11-17T19:30:14+00:00",
+  "modules": [
+    {
+      "id": "identity",
+      "title": "Identidad y alcance",
+      "required": true,
+      "state": "planned",
+      "dependencies": [],
+      "criteria": [
+        "project_target",
+        "scope"
+      ],
+      "inputs": {},
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "content",
+      "title": "Contenido y marca",
+      "required": true,
+      "state": "planned",
+      "dependencies": [
+        "identity"
+      ],
+      "criteria": [
+        "approved_content"
+      ],
+      "inputs": {
+        "source_content": {
+          "state": "pending",
+          "data_kind": null,
+          "source": null,
+          "evidence": null
+        }
+      },
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "home_nav",
+      "title": "Inicio y navegación",
+      "required": true,
+      "state": "planned",
+      "dependencies": [
+        "identity",
+        "content"
+      ],
+      "criteria": [
+        "navigation",
+        "links"
+      ],
+      "inputs": {},
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "responsive",
+      "title": "Móvil y accesibilidad",
+      "required": true,
+      "state": "planned",
+      "dependencies": [
+        "home_nav"
+      ],
+      "criteria": [
+        "mobile_flow",
+        "keyboard"
+      ],
+      "inputs": {},
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "primary_action",
+      "title": "Acción principal",
+      "required": true,
+      "state": "planned",
+      "dependencies": [
+        "home_nav"
+      ],
+      "criteria": [
+        "action_result",
+        "error_recovery"
+      ],
+      "inputs": {},
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "access",
+      "title": "Acceso y permisos",
+      "required": true,
+      "state": "implemented",
+      "dependencies": [
+        "identity"
+      ],
+      "criteria": [
+        "authentication",
+        "authorization"
+      ],
+      "inputs": {
+        "access_policy": {
+          "state": "pending",
+          "data_kind": null,
+          "source": null,
+          "evidence": null
+        }
+      },
+      "target_environment": "production",
+      "checks": [
+        {
+          "criterion": "authentication",
+          "result": "pass",
+          "evidence": "npm test: 257 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El formulario permite crear y cambiar contraseñas con validación; la acción administrativa se ejecuta en Edge Function.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "1bb60c5",
+          "project_id": "trefil-os",
+          "at": "2026-11-17T19:30:14+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "authorization",
+          "result": "pass",
+          "evidence": "tests/workforce-member-profiles.test.ts y tests/deployment.test.mjs",
+          "observed": "Equipo reutiliza la sesión vigente, mantiene permisos por persona y expone enlaces privados solo al administrador.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "1bb60c5",
+          "project_id": "trefil-os",
+          "at": "2026-11-17T19:30:14+00:00",
+          "stale": false
+        }
+      ],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "operations",
+      "title": "Operaciones del portal",
+      "required": true,
+      "state": "planned",
+      "dependencies": [
+        "access",
+        "primary_action"
+      ],
+      "criteria": [
+        "main_flow",
+        "persistence",
+        "error_recovery"
+      ],
+      "inputs": {
+        "operation_requirements": {
+          "state": "pending",
+          "data_kind": null,
+          "source": null,
+          "evidence": null
+        }
+      },
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "qa",
+      "title": "Verificación del recorrido",
+      "required": true,
+      "state": "planned",
+      "dependencies": [
+        "identity",
+        "content",
+        "home_nav",
+        "responsive",
+        "primary_action",
+        "access",
+        "operations"
+      ],
+      "criteria": [
+        "end_to_end",
+        "known_errors"
+      ],
+      "inputs": {},
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    },
+    {
+      "id": "deployment",
+      "title": "Publicación y entrega",
+      "required": true,
+      "state": "planned",
+      "dependencies": [
+        "qa"
+      ],
+      "criteria": [
+        "deployment_url",
+        "deployed_flow"
+      ],
+      "inputs": {},
+      "target_environment": "production",
+      "checks": [],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "1bb60c5"
+    }
+  ],
+  "history": [
+    {
+      "at": "2026-11-17T19:24:57+00:00",
+      "action": "init",
+      "module": null,
+      "note": "Registro creado; no acredita implementación."
+    },
+    {
+      "at": "2026-11-17T19:25:27+00:00",
+      "action": "invalidate",
+      "module": "access",
+      "note": "Integrar Equipo dentro de Trefil OS, permitir asignar claves y compartir enlaces privados de ingreso."
+    },
+    {
+      "at": "2026-11-17T19:25:27+00:00",
+      "action": "invalidate",
+      "module": "operations",
+      "note": "Integrar Equipo dentro de Trefil OS, permitir asignar claves y compartir enlaces privados de ingreso."
+    },
+    {
+      "at": "2026-11-17T19:25:27+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Integrar Equipo dentro de Trefil OS, permitir asignar claves y compartir enlaces privados de ingreso."
+    },
+    {
+      "at": "2026-11-17T19:25:27+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Integrar Equipo dentro de Trefil OS, permitir asignar claves y compartir enlaces privados de ingreso."
+    },
+    {
+      "at": "2026-11-17T19:25:27+00:00",
+      "action": "set",
+      "module": "access",
+      "note": "Integrar Equipo dentro de Trefil OS, permitir asignar claves y compartir enlaces privados de ingreso."
+    },
+    {
+      "at": "2026-11-17T19:29:57+00:00",
+      "action": "invalidate",
+      "module": "access",
+      "note": "Equipo integrado en la navegación principal con administración de contraseñas y enlaces privados."
+    },
+    {
+      "at": "2026-11-17T19:29:57+00:00",
+      "action": "invalidate",
+      "module": "operations",
+      "note": "Equipo integrado en la navegación principal con administración de contraseñas y enlaces privados."
+    },
+    {
+      "at": "2026-11-17T19:29:57+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Equipo integrado en la navegación principal con administración de contraseñas y enlaces privados."
+    },
+    {
+      "at": "2026-11-17T19:29:57+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Equipo integrado en la navegación principal con administración de contraseñas y enlaces privados."
+    },
+    {
+      "at": "2026-11-17T19:29:57+00:00",
+      "action": "set",
+      "module": "access",
+      "note": "Equipo integrado en la navegación principal con administración de contraseñas y enlaces privados."
+    },
+    {
+      "at": "2026-11-17T19:30:14+00:00",
+      "action": "record",
+      "module": "access",
+      "note": "authentication: pass"
+    },
+    {
+      "at": "2026-11-17T19:30:14+00:00",
+      "action": "record",
+      "module": "access",
+      "note": "authorization: pass"
+    }
+  ]
+}

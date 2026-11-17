@@ -85,7 +85,7 @@ Deno.serve(async (request) => {
 
     const authorization = request.headers.get("Authorization") ?? "";
     const action = payload?.action;
-    if (!authorization.startsWith("Bearer ") || !["create", "delete", "link"].includes(action) || !uuid.test(payload.personId))
+    if (!authorization.startsWith("Bearer ") || !["create", "password", "delete", "link"].includes(action) || !uuid.test(payload.personId))
       return respond({ code: "not_allowed" }, 401);
     const scoped = createClient(url, publishableKey, { ...options, global: { headers: { Authorization: authorization } } });
     const { data: target, error: accessError } = await scoped.rpc("workforce_invite_target", { p_id: payload.personId });
@@ -119,6 +119,44 @@ Deno.serve(async (request) => {
         return respond({ code: "access_unavailable" }, 502);
       }
       return respond({ created: true }, 201);
+    }
+
+    if (action === "password") {
+      if (typeof payload.password !== "string" || payload.password.length < 6 || payload.password.length > 256)
+        return respond({ code: "invalid_password" }, 400);
+      const { data: existing, error: lookupError } = await admin.rpc("workforce_find_auth_user", {
+        p_identifier_hash: target.identifier_hash,
+      });
+      if (lookupError) return respond({ code: "access_unavailable" }, 502);
+
+      let userId = existing;
+      if (userId) {
+        const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
+          password: payload.password,
+          email_confirm: true,
+        });
+        if (updateError) return respond({ code: "access_unavailable" }, 409);
+      } else {
+        const { data: created, error: createError } = await admin.auth.admin.createUser({
+          email: emailFor(target.identifier_hash),
+          password: payload.password,
+          email_confirm: true,
+        });
+        if (createError || !created.user) return respond({ code: "access_unavailable" }, 409);
+        userId = created.user.id;
+      }
+
+      if (!target.registered) {
+        const { error: registerError } = await admin.rpc("workforce_register_auth_user", {
+          p_person: payload.personId,
+          p_user: userId,
+        });
+        if (registerError) {
+          if (!existing) await admin.auth.admin.deleteUser(userId);
+          return respond({ code: "access_unavailable" }, 502);
+        }
+      }
+      return respond({ passwordUpdated: true });
     }
 
     if (action === "delete") {

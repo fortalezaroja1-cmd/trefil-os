@@ -4,6 +4,53 @@
   color: var(--ink);
   font-size: 14px;
 }
+.workforce-embedded {
+  min-width: 0;
+}
+.workforce-embedded-state,
+.workforce-embedded-login {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.workforce-embedded-state h2,
+.workforce-embedded-login h2 {
+  margin-bottom: 5px;
+  font-size: 22px;
+}
+.workforce-embedded-state p,
+.workforce-embedded-login > div > p:last-child {
+  color: var(--muted);
+}
+.workforce-embedded-state.error {
+  border-color: #efccc7;
+  color: #8d2921;
+  background: #fff7f5;
+}
+.workforce-embedded-login {
+  display: grid;
+  grid-template-columns: minmax(220px, .8fr) minmax(320px, 1fr);
+  align-items: center;
+  gap: 32px;
+}
+.workforce-embedded-login form {
+  display: grid;
+  gap: 14px;
+}
+.workforce-embedded-login .workforce-feedback {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.workforce-spinner {
+  display: inline-flex;
+  flex: 0 0 auto;
+  animation: workforce-spin .8s linear infinite;
+}
+@keyframes workforce-spin { to { transform: rotate(360deg); } }
 .workforce-shell .button {
   min-height: 42px;
   font-size: 13px;
@@ -714,6 +761,7 @@
 .member-delete-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #ffebe7; color: #a33b31; }
 .member-delete-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 9px; margin-top: 4px; }
 @media (max-width: 760px) {
+  .workforce-embedded-login { grid-template-columns: 1fr; gap: 20px; }
   .workforce-access {
     grid-template-columns: minmax(0, 440px);
     padding: 16px;

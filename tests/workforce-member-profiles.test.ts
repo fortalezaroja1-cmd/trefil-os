@@ -7,6 +7,20 @@ import type { WorkforceDay } from "../src/lib/workforce";
 const uuid = (suffix: number) =>
   "d0000000-0000-4000-8000-" + String(suffix).padStart(12, "0");
 
+test("Equipo se abre dentro de Trefil OS y permite administrar claves y enlaces", async () => {
+  const finance = await readFile(new URL("../src/components/finance-app.tsx", import.meta.url), "utf8");
+  const embedded = await readFile(new URL("../src/components/workforce-embedded.tsx", import.meta.url), "utf8");
+  const consoleUi = await readFile(new URL("../src/components/workforce-member-console.tsx", import.meta.url), "utf8");
+  assert.match(finance, /id:'team',label:'Equipo'/);
+  assert.match(finance, /view==='team'&&<WorkforceEmbedded\/>/);
+  assert.doesNotMatch(finance, /href="\/equipo\/"[^>]*><Users/);
+  assert.match(embedded, /Usando tu sesión actual de Trefil OS/);
+  assert.match(consoleUi, /Asignar nueva contraseña/);
+  assert.match(consoleUi, /action: "password"/);
+  assert.match(consoleUi, /Enlace privado/);
+  assert.match(consoleUi, /Copiar enlace de ingreso/);
+});
+
 test("Equipo unifica usuario, permisos individuales y horario", async () => {
   const db = new PGlite();
   const authAdmin = uuid(1);

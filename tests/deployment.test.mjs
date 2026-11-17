@@ -57,8 +57,9 @@ test('Equipo invite endpoint accepts the exact production domains', () => {
 });
 
 test('Equipo lets the administrator create credentials and revoke a removed user', () => {
-  assert.match(workforceInvite, /\["create", "delete", "link"\]/);
+  assert.match(workforceInvite, /\["create", "password", "delete", "link"\]/);
   assert.match(workforceInvite, /auth\.admin\.createUser\(\{/);
+  assert.match(workforceInvite, /auth\.admin\.updateUserById\(userId/);
   assert.match(workforceInvite, /password: payload\.password/);
   assert.match(workforceInvite, /workforce_register_auth_user/);
   assert.match(workforceInvite, /workforce_remove_person/);

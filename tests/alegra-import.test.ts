@@ -11,6 +11,7 @@ test('Alegra history is isolated, permission checked and cannot post operational
   const sql=await readFile(migration,'utf8');
   assert.match(sql,/create schema if not exists alegra/);
   assert.match(sql,/revoke all on schema alegra from public,anon,authenticated/);
+  assert.match(sql,/grant usage on schema alegra to authenticated/);
   assert.match(sql,/workforce\.has_permission\(actor,'alegra_read'\)/);
   assert.match(sql,/status text not null check\(status in \('importing','completed','failed'\)\)/);
   assert.match(sql,/private\.finish_alegra_import/);

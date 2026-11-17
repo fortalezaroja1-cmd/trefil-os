@@ -2,6 +2,7 @@
 -- create Caja movements, ledger entries, customer balances or stock changes.
 create schema if not exists alegra;
 revoke all on schema alegra from public,anon,authenticated;
+grant usage on schema alegra to authenticated;
 
 insert into workforce.permissions(code,name,description,category,module,sort_order) values
   ('alegra_read','Consultar histórico de Alegra','Ver clientes, productos y facturas importados desde Alegra.','team','sales',420),

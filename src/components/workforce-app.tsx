@@ -80,7 +80,9 @@ export function WorkforceApp() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [data, setData] = useState<WorkforceDay | null>(null);
   const [day, setDay] = useState<string | null>(null);
-  const [tab, setTab] = useState<"personal" | "team">("personal");
+  // Equipo is an administrative entrypoint. Administrators land directly on
+  // the people/permissions console; employees are still kept on Mi día.
+  const [tab, setTab] = useState<"personal" | "team">("team");
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -138,7 +140,7 @@ export function WorkforceApp() {
       if (!session || event === "SIGNED_OUT") {
         version.current++;
         setData(null);
-        setTab("personal");
+        setTab("team");
         setDay(null);
         setRefreshing(false);
       }
@@ -514,12 +516,12 @@ export function WorkforceApp() {
                 aria-current={tab === "team" ? "page" : undefined}
                 onClick={() => setTab("team")}
               >
-                <Users size={17} /> Gestionar equipo
+                <Users size={17} /> Equipo y permisos
               </button>
             ) : (
-              <Link href="/acceso/?equipo=1">
-                <ShieldCheck size={17} /> Verificar para gestionar
-              </Link>
+              <span className="workforce-tab-note">
+                <ShieldCheck size={17} /> Sin permiso para administrar
+              </span>
             )}
           </nav>
         )}

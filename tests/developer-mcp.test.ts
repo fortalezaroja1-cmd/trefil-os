@@ -26,12 +26,14 @@ test('MCP server implements scoped Streamable HTTP calls without exposing a serv
   const source=await readFile(server,'utf8');
   assert.match(source,/protocolVersion = "2025-06-18"/);assert.match(source,/method === "tools\/list"/);assert.match(source,/method === "tools\/call"/);
   assert.match(source,/developer_authorize_key/);assert.match(source,/Authorization/);assert.match(source,/WWW-Authenticate/);
+  assert.match(source,/withOAuthProtectedResource/);assert.match(source,/withSupabase\(\{ auth: "user" \}\)/);
+  assert.match(source,/"openai\/profile": true/);assert.match(source,/developer_oauth_profile/);
   assert.doesNotMatch(source,/service_role\s*[:=]\s*["'][A-Za-z0-9]/);assert.match(source,/pendingAdapters/);
 });
-test('developer console labels unavailable adapters and never retrieves an existing plaintext key',async()=>{
+test('developer console explains per-user OAuth and does not expose shared credentials',async()=>{
   const source=await readFile(ui,'utf8');
-  assert.match(source,/Nueva clave MCP/);assert.match(source,/Pendiente/);assert.match(source,/no puede volver a mostrarla/i);
-  assert.match(source,/developer_create_key/);assert.doesNotMatch(source,/select\([^)]*token_hash/);
+  assert.match(source,/OAuth 2\.1/);assert.match(source,/Funciones y permisos/);assert.match(source,/únicamente las funciones autorizadas/);
+  assert.doesNotMatch(source,/Nueva clave MCP|TU_CLAVE_MCP|developer_create_key/);assert.doesNotMatch(source,/select\([^)]*token_hash/);
 });
 
 test('an administrator can create, scope, authorize and revoke a key end to end',async()=>{
@@ -45,7 +47,7 @@ test('an administrator can create, scope, authorize and revoke a key end to end'
     grant usage on schema auth to authenticated,service_role;
     grant execute on function auth.uid(),auth.jwt() to authenticated,service_role;
   `);
-  for(const file of ['20261111140836_workforce.sql','20261111144203_cedula_identity.sql','20261111153246_workforce_roles_permissions.sql','20261111164415_developer_mcp_access.sql'])
+  for(const file of ['20261111140836_workforce.sql','20261111144203_cedula_identity.sql','20261111153246_workforce_roles_permissions.sql','20261111164415_developer_mcp_access.sql','20261117135745_workforce_member_profiles.sql','20261117144544_simplify_team_admin_access.sql','20261117150100_mcp_oauth_user_authorization.sql'])
     await db.exec(await readFile(new URL(`../supabase/migrations/${file}`,import.meta.url),'utf8'));
   const user='10000000-0000-4000-8000-000000000001';
   const person='20000000-0000-4000-8000-000000000001';
@@ -64,6 +66,10 @@ test('an administrator can create, scope, authorize and revoke a key end to end'
   const snapshot=await db.query<{developer_snapshot:{keys:Array<Record<string,unknown>>}}>('select public.developer_snapshot()');
   assert.equal(snapshot.rows[0].developer_snapshot.keys.length,1);
   assert.ok(!('token_hash' in snapshot.rows[0].developer_snapshot.keys[0]));
+  const profile=await db.query<{developer_oauth_profile:{id:string;tools:string[];permissions:string[]}}>('select public.developer_oauth_profile()');
+  assert.equal(profile.rows[0].developer_oauth_profile.id,person);
+  assert.ok(profile.rows[0].developer_oauth_profile.tools.includes('trefil_get_profile'));
+  assert.ok(profile.rows[0].developer_oauth_profile.permissions.includes('ai_connect'));
 
   await db.exec('reset role;set role service_role');
   const allowed=await db.query<{developer_authorize_key:{key_id:string}|null}>(`select public.developer_authorize_key($1,'tools/call','trefil_system_status',null,$2)`,[hash,'40000000-0000-4000-8000-000000000001']);

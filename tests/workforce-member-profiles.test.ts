@@ -34,6 +34,7 @@ test("Equipo unifica usuario, permisos individuales y horario", async () => {
       "20261111153246_workforce_roles_permissions.sql",
       "20261111164415_developer_mcp_access.sql",
       "20261117135745_workforce_member_profiles.sql",
+      "20261117144544_simplify_team_admin_access.sql",
     ]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), "utf8"));
     }
@@ -47,10 +48,11 @@ test("Equipo unifica usuario, permisos individuales y horario", async () => {
             ($4,$5,$6,'2222','Usuario Operativo','Auxiliar','Operaciones','employee')
     `, [admin, authAdmin, "a".repeat(64), agent, authAgent, "b".repeat(64)]);
 
-    await db.query("select set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.aal','aal2',false)", [authAdmin]);
+    await db.query("select set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.aal','aal1',false)", [authAdmin]);
     await db.exec("set role authenticated");
     const first = (await db.query<{ data: WorkforceDay }>("select public.workforce_day(null) data")).rows[0].data;
     assert.equal(first.roles.find((role) => role.code === "admin")?.name, "Administrador total");
+    assert.equal(first.can_manage, true);
     assert.ok(first.roles.some((role) => role.code === "reader"));
     assert.ok(first.permissions.some((permission) => permission.module === "cash"));
 

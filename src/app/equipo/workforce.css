@@ -555,6 +555,20 @@
   border-bottom: 1px solid var(--line);
 }
 .member-profile-header > div { display: flex; gap: 13px; min-width: 0; }
+.member-profile-actions { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.member-danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #e3aaa3;
+  background: #fff7f5;
+  color: #a33b31;
+  font-weight: 750;
+}
+.member-danger-button:hover { background: #ffebe7; }
+.member-danger-button.solid { border-color: #aa3d32; background: #aa3d32; color: #fff; }
+.member-danger-button.solid:hover { background: #8e3028; }
 .member-profile-name { display: flex; align-items: center; gap: 9px; }
 .member-profile-name h3 { font-size: 20px; overflow-wrap: anywhere; }
 .member-profile-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
@@ -683,6 +697,22 @@
 .member-invite-result { align-self: center; width: min(490px, 92vw); display: grid; gap: 14px; padding: 30px; margin: auto; border-radius: 16px; background: #fff; box-shadow: 0 20px 70px #0b183a38; }
 .member-success { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #e9f8ef; color: #1d7545; }
 .member-invite-result p { color: var(--muted); }
+.member-delete-confirm {
+  align-self: center;
+  width: min(520px, 92vw);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 30px;
+  margin: auto;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 70px #0b183a38;
+}
+.member-delete-confirm h2 { margin-bottom: 7px; font-size: 23px; }
+.member-delete-confirm p { color: var(--muted); line-height: 1.55; }
+.member-delete-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #ffebe7; color: #a33b31; }
+.member-delete-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 9px; margin-top: 4px; }
 @media (max-width: 760px) {
   .workforce-access {
     grid-template-columns: minmax(0, 440px);
@@ -744,6 +774,7 @@
   .member-time-slot { flex-wrap: wrap; }
   .member-time-slot > label { width: 124px; }
   .member-profile-header { flex-direction: column; }
+  .member-profile-actions { justify-content: flex-start; }
   .member-form-grid { grid-template-columns: 1fr; }
   .member-form-grid .field:first-child { grid-column: auto; }
 }

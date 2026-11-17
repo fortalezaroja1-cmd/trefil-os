@@ -35,6 +35,7 @@ test("Equipo unifica usuario, permisos individuales y horario", async () => {
       "20261111164415_developer_mcp_access.sql",
       "20261117135745_workforce_member_profiles.sql",
       "20261117144544_simplify_team_admin_access.sql",
+      "20261117185415_workforce_admin_credentials_and_removal.sql",
     ]) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${migration}`, import.meta.url), "utf8"));
     }
@@ -75,6 +76,47 @@ test("Equipo unifica usuario, permisos individuales y horario", async () => {
     assert.deepEqual(member?.permissions, ["tasks_view_own", "cash_view", "reports_view"]);
     assert.equal(member?.availability?.length, 2);
     assert.equal(member?.availability?.[0].start_time, "08:00");
+
+    const removableAuth = uuid(3);
+    const removable = uuid(13);
+    const removableHash = "c".repeat(64);
+    await db.exec("reset role");
+    await db.query("insert into auth.users values($1,$2,now())", [
+      removableAuth,
+      `${removableHash}@identidad.trefielectric.internal`,
+    ]);
+    await db.query(`
+      insert into workforce.people(id,identifier_hash,identifier_last_four,full_name,job_title,area,access_role)
+      values($1,$2,'3333','Usuario para retirar','Auxiliar','Operaciones','employee')
+    `, [removable, removableHash]);
+    await db.exec("set role service_role");
+    assert.equal((await db.query<{ linked: boolean }>(
+      "select public.workforce_register_auth_user($1,$2) linked",
+      [removable, removableAuth],
+    )).rows[0].linked, true);
+    await db.exec("set role authenticated");
+    const removed = (await db.query<{ result: { removed: boolean; identifier_hash: string } }>(
+      "select public.workforce_remove_person($1) result",
+      [removable],
+    )).rows[0].result;
+    assert.equal(removed.removed, true);
+    assert.equal(removed.identifier_hash, removableHash);
+    const afterRemoval = (await db.query<{ data: WorkforceDay }>("select public.workforce_day(null) data")).rows[0].data;
+    assert.equal(afterRemoval.people.some((person) => person.id === removable), false);
+    await db.exec("reset role");
+    const archived = (await db.query<{ user_id: string | null; removed_at: string | null; identifier_hash: string }>(
+      "select user_id,removed_at,identifier_hash from workforce.people where id=$1",
+      [removable],
+    )).rows[0];
+    assert.equal(archived.user_id, null);
+    assert.ok(archived.removed_at);
+    assert.notEqual(archived.identifier_hash, removableHash);
+
+    await db.exec("set role authenticated");
+    await assert.rejects(
+      db.query("select public.workforce_remove_person($1)", [admin]),
+      /control total no se puede eliminar/,
+    );
 
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [authAgent]);
     const agentView = (await db.query<{ data: WorkforceDay }>("select public.workforce_day(null) data")).rows[0].data;

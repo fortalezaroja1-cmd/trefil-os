@@ -56,6 +56,15 @@ test('Equipo invite endpoint accepts the exact production domains', () => {
   assert.doesNotMatch(workforceInvite, /https:\/\/\*\.vercel\.app/);
 });
 
+test('Equipo lets the administrator create credentials and revoke a removed user', () => {
+  assert.match(workforceInvite, /\["create", "delete", "link"\]/);
+  assert.match(workforceInvite, /auth\.admin\.createUser\(\{/);
+  assert.match(workforceInvite, /password: payload\.password/);
+  assert.match(workforceInvite, /workforce_register_auth_user/);
+  assert.match(workforceInvite, /workforce_remove_person/);
+  assert.match(workforceInvite, /auth\.admin\.deleteUser\(authUser\)/);
+});
+
 test('the one-time Equipo setup activates the reserved control-total owner', () => {
   for (const source of [workforceInvite, workforceApp, reservedOwnerMigration]) {
     assert.match(source, /Federico Velásquez Perdomo/);

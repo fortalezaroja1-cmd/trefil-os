@@ -84,11 +84,60 @@ Deno.serve(async (request) => {
     }
 
     const authorization = request.headers.get("Authorization") ?? "";
-    if (!authorization.startsWith("Bearer ") || payload?.action !== "link" || !uuid.test(payload.personId))
+    const action = payload?.action;
+    if (!authorization.startsWith("Bearer ") || !["create", "delete", "link"].includes(action) || !uuid.test(payload.personId))
       return respond({ code: "not_allowed" }, 401);
     const scoped = createClient(url, publishableKey, { ...options, global: { headers: { Authorization: authorization } } });
     const { data: target, error: accessError } = await scoped.rpc("workforce_invite_target", { p_id: payload.personId });
     if (accessError || !hash.test(target?.identifier_hash)) return respond({ code: "not_allowed" }, 403);
+
+    if (action === "create") {
+      if (typeof payload.password !== "string" || payload.password.length < 6 || payload.password.length > 256)
+        return respond({ code: "invalid_password" }, 400);
+      if (target.registered) return respond({ code: "already_registered" }, 409);
+
+      // A previous unfinished invitation can leave an Auth user without a
+      // linked directory entry. Replace that orphan so the administrator's
+      // password becomes the only active credential.
+      const { data: orphan } = await admin.rpc("workforce_find_auth_user", { p_identifier_hash: target.identifier_hash });
+      if (orphan) {
+        const { error: orphanError } = await admin.auth.admin.deleteUser(orphan);
+        if (orphanError) return respond({ code: "access_unavailable" }, 502);
+      }
+      const { data: created, error: createError } = await admin.auth.admin.createUser({
+        email: emailFor(target.identifier_hash),
+        password: payload.password,
+        email_confirm: true,
+      });
+      if (createError || !created.user) return respond({ code: "access_unavailable" }, 409);
+      const { error: registerError } = await admin.rpc("workforce_register_auth_user", {
+        p_person: payload.personId,
+        p_user: created.user.id,
+      });
+      if (registerError) {
+        await admin.auth.admin.deleteUser(created.user.id);
+        return respond({ code: "access_unavailable" }, 502);
+      }
+      return respond({ created: true }, 201);
+    }
+
+    if (action === "delete") {
+      const { data: removed, error: removeError } = await scoped.rpc("workforce_remove_person", { p_id: payload.personId });
+      if (removeError || removed?.removed !== true) return respond({ code: "remove_unavailable" }, 409);
+      let authUser = removed.user_id;
+      if (!authUser) {
+        const { data: found } = await admin.rpc("workforce_find_auth_user", { p_identifier_hash: removed.identifier_hash });
+        authUser = found;
+      }
+      let authDeleted = true;
+      if (authUser) {
+        const { error: deleteError } = await admin.auth.admin.deleteUser(authUser);
+        authDeleted = !deleteError;
+        if (deleteError) console.error("workforce auth cleanup", deleteError.message);
+      }
+      return respond({ removed: true, authDeleted });
+    }
+
     const type = target.registered ? "recovery" : "invite";
     const { data, error } = await admin.auth.admin.generateLink({ type, email: emailFor(target.identifier_hash) });
     if (error || !data?.properties?.hashed_token) return respond({ code: "link_unavailable" }, 502);

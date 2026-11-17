@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   Plus,
   ShieldCheck,
+  Trash2,
   UserPlus,
   Users,
   X,
@@ -79,7 +80,8 @@ export function WorkforceMemberConsole({
 }) {
   const [selectedId, setSelectedId] = useState(snapshot.me.id);
   const [drawer, setDrawer] = useState<DirectoryPerson | "new" | null>(null);
-  const [invite, setInvite] = useState<{ name: string; link: string } | null>(null);
+  const [created, setCreated] = useState<{ name: string } | null>(null);
+  const [removing, setRemoving] = useState<DirectoryPerson | null>(null);
   const people = snapshot.people;
   const selected = people.find((person) => person.id === selectedId) ?? people[0];
 
@@ -157,6 +159,7 @@ export function WorkforceMemberConsole({
             self={selected.id === snapshot.me.id}
             busy={busy}
             edit={() => setDrawer(selected)}
+            remove={() => setRemoving(selected)}
           />
           <AvailabilityEditor person={selected} busy={busy} perform={perform} />
           <section className="member-tasks-panel">
@@ -182,13 +185,25 @@ export function WorkforceMemberConsole({
           busy={busy}
           perform={perform}
           close={() => setDrawer(null)}
-          invited={(name, link) => {
+          created={(name) => {
             setDrawer(null);
-            setInvite({ name, link });
+            setCreated({ name });
           }}
         />
       )}
-      {invite && <InviteResult invite={invite} close={() => setInvite(null)} />}
+      {created && <AccessCreatedResult result={created} close={() => setCreated(null)} />}
+      {removing && (
+        <RemoveMemberDialog
+          person={removing}
+          busy={busy}
+          perform={perform}
+          close={() => setRemoving(null)}
+          removed={() => {
+            setRemoving(null);
+            setSelectedId(snapshot.me.id);
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -200,6 +215,7 @@ function MemberDetailHeader({
   self,
   busy,
   edit,
+  remove,
 }: {
   person: DirectoryPerson;
   roles: RoleDefinition[];
@@ -207,6 +223,7 @@ function MemberDetailHeader({
   self: boolean;
   busy: boolean;
   edit: () => void;
+  remove: () => void;
 }) {
   const granted = effectivePermissions(person, roles);
   const modules = new Set(
@@ -232,9 +249,12 @@ function MemberDetailHeader({
           </div>
         </div>
       </div>
-      <button className="button button-secondary" disabled={busy} onClick={edit}>
-        {person.access_role === "admin" && self ? "Revisar control total" : "Editar usuario"}
-      </button>
+      <div className="member-profile-actions">
+        {!self && <button className="button member-danger-button" disabled={busy} onClick={remove}><Trash2 size={16} /> Eliminar usuario</button>}
+        <button className="button button-secondary" disabled={busy} onClick={edit}>
+          {person.access_role === "admin" && self ? "Revisar control total" : "Editar usuario"}
+        </button>
+      </div>
     </section>
   );
 }
@@ -317,14 +337,14 @@ function MemberDrawer({
   busy,
   perform,
   close,
-  invited,
+  created,
 }: {
   person?: DirectoryPerson;
   snapshot: WorkforceDay;
   busy: boolean;
   perform: Perform;
   close: () => void;
-  invited: (name: string, link: string) => void;
+  created: (name: string) => void;
 }) {
   const editingSelf = person?.id === snapshot.me.id;
   const [role, setRole] = useState(person?.access_role ?? "employee");
@@ -360,6 +380,11 @@ function MemberDrawer({
     const name = String(fields.get("name") ?? "").trim();
     const personId = person?.id ?? crypto.randomUUID();
     void perform(async (client) => {
+      const password = String(fields.get("password") ?? "");
+      if (!person && password.length < 6)
+        throw new WorkforceError("La contraseña debe tener al menos 6 caracteres por el requisito técnico del acceso.");
+      if (!person && password !== String(fields.get("confirm") ?? ""))
+        throw new WorkforceError("Las contraseñas no coinciden.");
       const documentNumber = String(fields.get("document") ?? "");
       const identity = documentNumber
         ? await documentIdentity(documentNumber)
@@ -385,9 +410,12 @@ function MemberDrawer({
         p_permissions: editingSelf ? effectivePermissions(person!, snapshot.roles) : [...granted],
       });
       if (!person) {
-        const { data, error } = await client.functions.invoke<{ link: string }>("workforce-invite", { body: { action: "link", personId } });
-        if (error || !data?.link) throw new WorkforceError("El usuario se creó, pero no pudimos generar su enlace de activación.");
-        invited(name, data.link);
+        const { data, error } = await client.functions.invoke<{ created: boolean }>("workforce-invite", {
+          body: { action: "create", personId, password },
+        });
+        if (error || data?.created !== true)
+          throw new WorkforceError("El perfil se guardó, pero no pudimos crear su acceso. Elimínalo y vuelve a crearlo.");
+        created(name);
       } else {
         close();
       }
@@ -405,6 +433,8 @@ function MemberDrawer({
             <Field label="Número de cédula" hint={person ? "Déjalo vacío para conservar la cédula registrada." : "Será su usuario de ingreso; no se guardará el número completo."}><input name="document" inputMode="numeric" required={!person} disabled={person?.registered} /></Field>
             <Field label="Cargo"><input name="title" required minLength={2} maxLength={120} defaultValue={person?.job_title} /></Field>
             <Field label="Área"><input name="area" required minLength={2} maxLength={120} defaultValue={person?.area} /></Field>
+            {!person && <Field label="Contraseña inicial" hint="Tú defines la clave. Mínimo técnico: 6 caracteres; sin obligación de mayúsculas, números o símbolos."><input name="password" type="password" required minLength={6} maxLength={256} autoComplete="new-password" /></Field>}
+            {!person && <Field label="Repetir contraseña"><input name="confirm" type="password" required minLength={6} maxLength={256} autoComplete="new-password" /></Field>}
           </div>
 
           <section className="member-role-section">
@@ -439,24 +469,64 @@ function MemberDrawer({
           </section>
           <label className="workforce-checkbox"><input name="active" type="checkbox" defaultChecked={person?.active ?? true} disabled={editingSelf} /> Usuario activo</label>
           {editingSelf && <p className="member-protected"><ShieldCheck size={16} /> Tu cuenta conserva control total para evitar que la empresa quede sin administración.</p>}
-          <footer><button type="button" className="button button-secondary" onClick={close} disabled={busy}>Cancelar</button><button type="submit" className="button button-primary" disabled={busy}>{person ? "Guardar cambios" : "Crear y generar acceso"}</button></footer>
+          <footer><button type="button" className="button button-secondary" onClick={close} disabled={busy}>Cancelar</button><button type="submit" className="button button-primary" disabled={busy}>{person ? "Guardar cambios" : "Crear usuario y acceso"}</button></footer>
         </form>
       </aside>
     </div>
   );
 }
 
-function InviteResult({ invite, close }: { invite: { name: string; link: string }; close: () => void }) {
+function AccessCreatedResult({ result, close }: { result: { name: string }; close: () => void }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="member-drawer-backdrop">
       <section className="member-invite-result" role="dialog" aria-modal="true">
         <span className="member-success"><Check size={25} /></span>
-        <h2>Usuario creado</h2>
-        <p>{invite.name} ya aparece en el equipo. Comparte este enlace privado para que cree su contraseña.</p>
-        <Field label="Enlace de activación"><input readOnly value={invite.link} onFocus={(event) => event.target.select()} /></Field>
-        <button className="button button-primary" onClick={async () => { await navigator.clipboard.writeText(invite.link); setCopied(true); }}><Copy size={16} /> {copied ? "Enlace copiado" : "Copiar enlace"}</button>
+        <h2>Usuario y clave listos</h2>
+        <p>{result.name} puede entrar de inmediato con su número de cédula y la contraseña que acabas de definir. Compártelos únicamente por un canal privado.</p>
+        <button className="button button-primary" onClick={async () => { await navigator.clipboard.writeText(new URL("/equipo/", window.location.origin).href); setCopied(true); }}><Copy size={16} /> {copied ? "Enlace copiado" : "Copiar enlace de ingreso"}</button>
         <button className="button button-secondary" onClick={close}>Cerrar</button>
+      </section>
+    </div>
+  );
+}
+
+function RemoveMemberDialog({
+  person,
+  busy,
+  perform,
+  close,
+  removed,
+}: {
+  person: DirectoryPerson;
+  busy: boolean;
+  perform: Perform;
+  close: () => void;
+  removed: () => void;
+}) {
+  function confirmRemoval() {
+    void perform(async (client) => {
+      const { data, error } = await client.functions.invoke<{ removed: boolean }>("workforce-invite", {
+        body: { action: "delete", personId: person.id },
+      });
+      if (error || data?.removed !== true)
+        throw new WorkforceError("No pudimos eliminar el usuario. Revisa que no tenga una jornada abierta o personas a cargo.");
+      removed();
+    }, `${person.full_name} fue eliminado y su acceso quedó revocado.`);
+  }
+
+  return (
+    <div className="member-drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && close()}>
+      <section className="member-delete-confirm" role="alertdialog" aria-modal="true" aria-labelledby="member-delete-title">
+        <span className="member-delete-icon"><Trash2 size={23} /></span>
+        <div>
+          <h2 id="member-delete-title">Eliminar usuario</h2>
+          <p><strong>{person.full_name}</strong> dejará de aparecer en Equipo y no podrá volver a iniciar sesión. Su historial de tareas y jornadas se conservará.</p>
+        </div>
+        <div className="member-delete-actions">
+          <button className="button button-secondary" disabled={busy} onClick={close}>Cancelar</button>
+          <button className="button member-danger-button solid" disabled={busy} onClick={confirmRemoval}><Trash2 size={16} /> Eliminar definitivamente</button>
+        </div>
       </section>
     </div>
   );

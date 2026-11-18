@@ -116,6 +116,7 @@ Las herramientas manuales están disponibles mediante `npm run backup`, `npm run
 
 ## Documentación
 
+- [Plan de trabajo para operar al 100 % y reemplazar Alegra](docs/plan-operacion-100.md)
 - [Arquitectura y secuencia de puesta en marcha](docs/architecture.md)
 - [Modelo de datos y contratos financieros](docs/data-model.md)
 - [Seguridad y límites de verificación](docs/security.md)

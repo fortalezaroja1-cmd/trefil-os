@@ -10,7 +10,7 @@ La plataforma se considerará lista para reemplazar Alegra únicamente cuando cu
 1. Todos los datos operativos se guardan en la base institucional; `localStorage` no es fuente oficial.
 2. Cada persona entra con una cuenta individual, MFA cuando corresponda y permisos efectivos en servidor.
 3. Ventas, recaudos, compras, inventario, producción, caja, bancos, cartera y contabilidad forman un recorrido único y trazable.
-4. Las facturas, notas y demás documentos fiscales usados por la empresa son aceptados por la DIAN mediante el modo de operación elegido.
+4. Los documentos comerciales internos —facturas, notas, pedidos, remisiones y compras— conservan numeración, estado, relación y trazabilidad dentro de Trefil OS.
 5. Un comprobante de recaudo no paga facturas por sí solo: tesorería verifica cuentas receptoras, importe total y distribución.
 6. La contabilidad cuadra por partida doble; no existen saldos editables ni operaciones borrables.
 7. Los datos de Alegra están migrados o archivados, conciliados y aprobados por gerencia y contabilidad.
@@ -28,7 +28,7 @@ Publicar una pantalla, aprobar pruebas automáticas o tener un enlace de Vercel 
 | Datos operativos | La mayoría de los módulos usan una instantánea local del navegador. | Adaptador completo a Supabase, transacciones atómicas y concurrencia multiusuario. |
 | Base institucional | Existen migraciones financieras, RLS, Storage privado y estructuras de Equipo/MCP. | Completar esquemas de todos los módulos, probarlos con usuarios reales y conectar la aplicación. |
 | Usuarios | Hay flujos de Equipo, cédula, contraseña, roles y permisos. | Aprovisionamiento real, recuperación, MFA, revocación, sesiones y administración desde la plataforma. |
-| Facturación | Ventas conserva documentos comerciales locales. | Facturación electrónica DIAN, notas, numeración, contingencia, correo y estado legal. |
+| Documentos comerciales | Ventas conserva documentos comerciales locales. | Facturas internas, notas, numeración, correo, estado operativo y relación con pedido, despacho, cartera y recaudo. |
 | Contabilidad | Existe un núcleo de doble entrada para tesorería. | Plan de cuentas completo, causación, impuestos, centros, cierres y estados financieros. |
 | Alegra | Existe una estructura inicial de importación de contactos, productos y facturas. | Exportación completa, mapeo, carga repetible, conciliación, saldos iniciales y corte final. |
 | Continuidad | Hay herramientas de respaldo y restauración. | Ejecución real diaria, copia externa, alertas y restauración cronometrada. |
@@ -40,7 +40,7 @@ La prioridad cero es sustituir la persistencia local. No se deben cargar operaci
 | Responsabilidad | Propietario recomendado |
 | --- | --- |
 | Prioridad, políticas, excepciones y aceptación final | Federico Velásquez, dueño del producto |
-| Plan de cuentas, impuestos, saldos, cierres y DIAN | Contador o asesor tributario de la empresa |
+| Plan de cuentas, impuestos internos, saldos y cierres | Contador o asesor contable de la empresa |
 | Reglas de ventas, precios, cartera y devoluciones | Responsable comercial |
 | Producción, lotes, consumos, desperdicio y liberación | Responsable de Producción |
 | Recepciones, existencias, conteos y despachos | Responsable de Bodega/Inventarios |
@@ -60,15 +60,15 @@ Ninguna persona debe aprobar sus propias operaciones sensibles. El responsable f
 - Congelar el diccionario empresarial: sedes, bodegas, cuentas bancarias, medios de pago, listas de precios, impuestos, retenciones, unidades, centros de costo y responsables.
 - Aprobar matriz de roles y permisos por acción, no solo por pantalla.
 - Definir política de aprobaciones, montos, cierres, correcciones y segregación de funciones.
-- Elegir la vía DIAN: proveedor tecnológico habilitado, software propio o solución gratuita. Para reducir riesgo y tiempo, la ruta recomendada es integrar un proveedor tecnológico habilitado y conservar Trefil OS como sistema de operación.
-- Determinar si nómina electrónica y documento soporte harán parte del primer corte o de una fase posterior sin bloquear la contabilidad principal.
+- Definir los tipos de documento comercial interno, sus series, numeración, estados, responsables y reglas de corrección.
+- Determinar si nómina y documento soporte interno harán parte del primer corte o de una fase posterior sin bloquear la contabilidad principal.
 
 **Entregables y salida**
 
 - Matriz “Alegra actual → Trefil OS”.
 - Catálogo de procesos y responsables firmado.
 - Matriz de permisos aprobada.
-- Decisión documentada sobre DIAN.
+- Catálogo aprobado de documentos internos y su numeración.
 - Inventario de fuentes y período histórico que será migrado.
 
 ### Fase 1 — Núcleo institucional y seguridad (semanas 2 a 4)
@@ -111,10 +111,10 @@ Ninguna persona debe aprobar sus propias operaciones sensibles. El responsable f
 
 ### Fase 3 — Operación integrada (semanas 6 a 11)
 
-#### 3A. Ventas, facturación y recaudos
+#### 3A. Ventas, documentos comerciales y recaudos
 
 - Cotización → pedido → orden de producción/entrega → despacho → factura → cartera → recaudo.
-- Factura electrónica, notas crédito/débito, numeración, contingencia y estado DIAN.
+- Facturas internas, notas crédito/débito, numeración, correcciones, envío al cliente y estado operativo.
 - Pagos parciales, anticipos, retenciones, devoluciones, garantías y vendedores.
 - Un recaudo puede entrar en varias cuentas y pagar varias facturas; exige soporte, observación y verificación independiente.
 - Separar claramente facturado, vencido, reportado, recibido, verificado y aplicado.
@@ -176,13 +176,13 @@ Esta fase corre parcialmente en paralelo con la Fase 3 y requiere al contador.
 5. Inventario por bodega, costos y movimientos históricos disponibles.
 6. Bancos, caja, cuentas por cobrar, anticipos y demás saldos abiertos.
 7. Plan de cuentas, comprobantes y saldos contables aprobados.
-8. Documentos adjuntos y referencias fiscales que deban conservarse.
+8. Documentos adjuntos y referencias históricas que deban conservarse.
 
 **Método**
 
 - Cada importación usa un lote, huella del archivo, conteos, errores por fila y posibilidad de repetir sin duplicar.
 - Primero se ejecutan al menos dos simulaciones en pruebas.
-- Los documentos históricos se marcan como provenientes de Alegra; no se reenvían a la DIAN ni se recrean como documentos nuevos.
+- Los documentos históricos se marcan como provenientes de Alegra y no se recrean como operaciones nuevas.
 - Los saldos de corte requieren acta firmada por gerencia y contabilidad.
 - La migración final importa solo el diferencial posterior a la última simulación.
 
@@ -203,7 +203,7 @@ La diferencia monetaria aceptable al corte debe ser **COP 0**; cualquier diferen
 
 - Respaldo cifrado diario, copia independiente, retención y alertas por ausencia/fallo.
 - Restauración completa en un entorno aislado, con tiempo de recuperación medido.
-- Monitoreo de errores, operaciones fallidas, documentos DIAN, respaldos y accesos inusuales.
+- Monitoreo de errores, operaciones fallidas, documentos comerciales, respaldos y accesos inusuales.
 - Protección de producción, cabeceras, límites de solicitudes y rotación de credenciales.
 - Manuales por rol, mesa de ayuda, responsables de incidentes y procedimiento de contingencia.
 - Política de cambios: desarrollo → pruebas → aprobación → producción.
@@ -228,7 +228,7 @@ La diferencia monetaria aceptable al corte debe ser **COP 0**; cualquier diferen
 1. Congelar altas nuevas en Alegra al cierre acordado.
 2. Tomar copia y exportación final.
 3. Cargar el diferencial y conciliar COP 0.
-4. Confirmar numeración y emisión fiscal en producción.
+4. Confirmar numeración y emisión de documentos internos en producción.
 5. Habilitar Trefil OS como único sistema de registro.
 6. Conservar Alegra en modo consulta durante el período acordado; no cancelarlo hasta verificar acceso a históricos y obligaciones de conservación.
 7. Mantener un plan de reversión documentado durante la primera semana.
@@ -239,7 +239,7 @@ La estimación base es **18 semanas** con un responsable técnico de tiempo comp
 
 | Hito | Resultado | Semana objetivo |
 | --- | --- | ---: |
-| H1 | Alcance, permisos, datos y decisión DIAN aprobados | 1 |
+| H1 | Alcance, permisos, datos y documentos internos aprobados | 1 |
 | H2 | Persistencia multiusuario y seguridad institucional | 4 |
 | H3 | Equipo y maestros operativos | 6 |
 | H4 | Ventas, compras, inventario, producción y tesorería integrados | 11 |
@@ -247,7 +247,7 @@ La estimación base es **18 semanas** con un responsable técnico de tiempo comp
 | H6 | Migración simulada cuadrada y restauración aprobada | 15 |
 | H7 | Dos cierres paralelos aprobados y corte final | 18 |
 
-Las fechas se desplazan si faltan definiciones contables, acceso a DIAN/proveedor, exportaciones de Alegra o validación de responsables. No se recorta seguridad, conciliación ni respaldo para sostener una fecha.
+Las fechas se desplazan si faltan definiciones contables, exportaciones de Alegra o validación de responsables. No se recorta seguridad, conciliación ni respaldo para sostener una fecha.
 
 ## 6. Tablero semanal de control
 
@@ -261,7 +261,7 @@ El comité semanal revisará:
 - porcentaje de datos migrados y conciliados;
 - usuarios entrenados y recorridos completados;
 - respaldos verificados y última restauración;
-- documentos DIAN aceptados/rechazados;
+- documentos internos generados, corregidos y anulados;
 - diferencias de caja, bancos, inventario y contabilidad;
 - decisiones pendientes, responsable y fecha límite.
 
@@ -270,7 +270,7 @@ El comité semanal revisará:
 1. Actualizar el inventario de funciones que Trefil Electric usa hoy en Alegra.
 2. Aprobar matriz de roles, permisos y segregación de funciones.
 3. Aprobar plan de cuentas, impuestos, retenciones, bodegas y centros de costo.
-4. Elegir e iniciar la integración DIAN.
+4. Aprobar los tipos de documentos internos, series, numeración y reglas de corrección.
 5. Diseñar el esquema remoto faltante para Ventas, Inventarios, Producción, Compras, Agenda e Informes.
 6. Implementar el adaptador Supabase y retirar `localStorage` del primer recorrido vertical.
 7. Elegir como primer recorrido productivo: pedido → despacho → factura → recaudo verificado → asiento contable.
@@ -280,8 +280,7 @@ El comité semanal revisará:
 
 ## 8. Decisiones que no deben aplazarse
 
-- Proveedor tecnológico DIAN o desarrollo propio.
-- Alcance de nómina electrónica y documento soporte.
+- Alcance de nómina y documentos soporte internos.
 - Período histórico que se migrará en detalle y período que quedará como archivo.
 - Responsable de aprobar saldos iniciales y cierres.
 - Política de contraseñas, MFA y dispositivos autorizados.
@@ -294,7 +293,7 @@ El comité semanal revisará:
 No se cancela ni se deja de registrar en Alegra hasta que el comité de salida firme que:
 
 - los datos finales conciliaron en COP 0;
-- la DIAN aceptó los documentos de producción requeridos;
+- la numeración y los documentos internos fueron probados en producción;
 - los usuarios completaron sus recorridos con permisos reales;
 - los dos cierres paralelos fueron aprobados;
 - el respaldo y la restauración fueron comprobados;
@@ -303,10 +302,8 @@ No se cancela ni se deja de registrar en Alegra hasta que el comité de salida f
 
 Esta regla protege la continuidad de la empresa y convierte el reemplazo en una decisión verificable, no en una impresión visual de que la plataforma está terminada.
 
-## 10. Referencias de planificación
+## 10. Referencia de migración
 
-- DIAN, [requerimientos para ser facturador electrónico](https://micrositios.dian.gov.co/sistema-de-facturacion-electronica/requerimientos-para-ser-facturador-electronico/): modos de operación, firma digital y set de habilitación para proveedor tecnológico o desarrollo propio.
-- DIAN, [documentos que componen el Sistema de Factura Electrónica](https://www.dian.gov.co/impuestos/factura-electronica/Documents/Abece-sistema-de-factura-electronica.pdf): factura, notas y documentos soporte electrónicos.
 - Alegra, [exportación de información](https://ayuda.alegra.com/int/c%C3%B3mo-es-el-proceso-para-exportar-tu-informaci%C3%B3n-desde-alegra): reportes, facturas, notas, cotizaciones, remisiones, proveedores, contactos e ítems.
 
-Estas referencias orientan el proyecto, pero las decisiones tributarias y el alcance fiscal final deben ser aprobados por el contador o asesor tributario de Trefil Electric antes del paso a producción.
+La DIAN, la facturación electrónica fiscal y la habilitación de un proveedor tecnológico quedan expresamente fuera del alcance de este plan. Trefil OS administrará documentos comerciales internos y el control operativo de la empresa.

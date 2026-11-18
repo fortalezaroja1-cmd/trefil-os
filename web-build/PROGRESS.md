@@ -3,9 +3,9 @@
 Proyecto: `trefil-os`
 Perfil: portal
 Destino: https://project-kmpca.vercel.app
-Actualizado: 2026-11-18T17:43:14+00:00
+Actualizado: 2026-11-18T18:06:28+00:00
 
-Verificados: 0/11. Listos en entorno requerido: 0/11.
+Verificados: 0/12. Listos en entorno requerido: 0/12.
 Listo para lanzamiento: **no**.
 
 | Módulo | Estado | Entorno | Revisión | Pendiente / siguiente acción |
@@ -19,6 +19,7 @@ Listo para lanzamiento: **no**.
 | operations | planned |  | 1bb60c5 | Insumos: operation_requirements |
 | collections_control | implemented |  | work-in-progress |  |
 | inventory_replenishment | implemented |  | work-in-progress |  |
+| sales_product_catalog | implemented |  | work-in-progress |  |
 | qa | planned |  | 1bb60c5 |  |
 | deployment | planned |  | 1bb60c5 |  |
 
@@ -84,6 +85,16 @@ Criterios: production_receipts, order_outputs, alternate_outputs, stage_responsi
 - minimum_alerts: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
 - purchase_planning: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
 - spending_average: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
+
+### Catálogo y selector de productos de venta
+
+Criterios: preloaded_catalog, searchable_selector, multiple_lines, price_snapshot, inventory_link.
+
+- inventory_link: pass, test, revisión work-in-progress. Evidencia: npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados. Observado: Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.
+- price_snapshot: pass, test, revisión work-in-progress. Evidencia: npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados. Observado: Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.
+- preloaded_catalog: pass, test, revisión work-in-progress. Evidencia: npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados. Observado: Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.
+- searchable_selector: pass, test, revisión work-in-progress. Evidencia: npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados. Observado: Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.
+- multiple_lines: pass, test, revisión work-in-progress. Evidencia: npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados. Observado: Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.
 
 ### Verificación del recorrido
 

@@ -5,7 +5,7 @@
   "profile": "portal",
   "target": "https://project-kmpca.vercel.app",
   "created_at": "2026-11-17T19:24:57+00:00",
-  "updated_at": "2026-11-18T17:43:14+00:00",
+  "updated_at": "2026-11-18T18:06:28+00:00",
   "modules": [
     {
       "id": "identity",
@@ -446,6 +446,106 @@
       "spec_ref": "Solicitud del usuario del 18 de noviembre de 2026"
     },
     {
+      "id": "sales_product_catalog",
+      "title": "Catálogo y selector de productos de venta",
+      "required": true,
+      "state": "implemented",
+      "dependencies": [
+        "access"
+      ],
+      "criteria": [
+        "preloaded_catalog",
+        "searchable_selector",
+        "multiple_lines",
+        "price_snapshot",
+        "inventory_link"
+      ],
+      "inputs": {
+        "product_policy": {
+          "state": "received",
+          "evidence": "Capturas y solicitud del usuario del 18 de noviembre de 2026",
+          "data_kind": "real",
+          "source": "user_provided",
+          "note": "Productos cargados antes de facturar; selector por nombre o ID con datos del catálogo.",
+          "at": "2026-11-18T18:04:13+00:00",
+          "previous": {
+            "state": "pending",
+            "data_kind": null,
+            "source": null,
+            "evidence": null
+          }
+        }
+      },
+      "target_environment": "production",
+      "checks": [
+        {
+          "criterion": "inventory_link",
+          "result": "pass",
+          "evidence": "npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados",
+          "observed": "Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T18:06:15+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "price_snapshot",
+          "result": "pass",
+          "evidence": "npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados",
+          "observed": "Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T18:06:15+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "preloaded_catalog",
+          "result": "pass",
+          "evidence": "npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados",
+          "observed": "Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T18:06:27+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "searchable_selector",
+          "result": "pass",
+          "evidence": "npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados",
+          "observed": "Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T18:06:27+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "multiple_lines",
+          "result": "pass",
+          "evidence": "npm test: 264 pruebas aprobadas; npm run typecheck y npm run build aprobados",
+          "observed": "Catálogo previo, selector por nombre/SKU/ID, varios renglones, precio congelado y vínculo con Inventarios verificados con datos de prueba.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T18:06:28+00:00",
+          "stale": false
+        }
+      ],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "work-in-progress",
+      "spec_ref": "Solicitud del usuario del 18 de noviembre de 2026"
+    },
+    {
       "id": "qa",
       "title": "Verificación del recorrido",
       "required": true,
@@ -459,7 +559,8 @@
         "access",
         "operations",
         "collections_control",
-        "inventory_replenishment"
+        "inventory_replenishment",
+        "sales_product_catalog"
       ],
       "criteria": [
         "end_to_end",
@@ -812,6 +913,102 @@
       "action": "record",
       "module": "inventory_replenishment",
       "note": "spending_average: pass"
+    },
+    {
+      "at": "2026-11-18T18:04:13+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Se amplió el alcance con sales_product_catalog"
+    },
+    {
+      "at": "2026-11-18T18:04:13+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Se amplió el alcance con sales_product_catalog"
+    },
+    {
+      "at": "2026-11-18T18:04:13+00:00",
+      "action": "add",
+      "module": "sales_product_catalog",
+      "note": "Solicitud del usuario del 18 de noviembre de 2026"
+    },
+    {
+      "at": "2026-11-18T18:04:13+00:00",
+      "action": "invalidate",
+      "module": "sales_product_catalog",
+      "note": "Cambio de insumo: product_policy"
+    },
+    {
+      "at": "2026-11-18T18:04:13+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Cambio de insumo: product_policy"
+    },
+    {
+      "at": "2026-11-18T18:04:13+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Cambio de insumo: product_policy"
+    },
+    {
+      "at": "2026-11-18T18:04:13+00:00",
+      "action": "input",
+      "module": "sales_product_catalog",
+      "note": "Productos cargados antes de facturar; selector por nombre o ID con datos del catálogo."
+    },
+    {
+      "at": "2026-11-18T18:04:18+00:00",
+      "action": "invalidate",
+      "module": "sales_product_catalog",
+      "note": "Catálogo, búsqueda, selección múltiple, vínculo de inventario y precio congelado implementados; falta verificación en producción."
+    },
+    {
+      "at": "2026-11-18T18:04:18+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Catálogo, búsqueda, selección múltiple, vínculo de inventario y precio congelado implementados; falta verificación en producción."
+    },
+    {
+      "at": "2026-11-18T18:04:18+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Catálogo, búsqueda, selección múltiple, vínculo de inventario y precio congelado implementados; falta verificación en producción."
+    },
+    {
+      "at": "2026-11-18T18:04:18+00:00",
+      "action": "set",
+      "module": "sales_product_catalog",
+      "note": "Catálogo, búsqueda, selección múltiple, vínculo de inventario y precio congelado implementados; falta verificación en producción."
+    },
+    {
+      "at": "2026-11-18T18:06:15+00:00",
+      "action": "record",
+      "module": "sales_product_catalog",
+      "note": "inventory_link: pass"
+    },
+    {
+      "at": "2026-11-18T18:06:15+00:00",
+      "action": "record",
+      "module": "sales_product_catalog",
+      "note": "price_snapshot: pass"
+    },
+    {
+      "at": "2026-11-18T18:06:27+00:00",
+      "action": "record",
+      "module": "sales_product_catalog",
+      "note": "preloaded_catalog: pass"
+    },
+    {
+      "at": "2026-11-18T18:06:27+00:00",
+      "action": "record",
+      "module": "sales_product_catalog",
+      "note": "searchable_selector: pass"
+    },
+    {
+      "at": "2026-11-18T18:06:28+00:00",
+      "action": "record",
+      "module": "sales_product_catalog",
+      "note": "multiple_lines: pass"
     }
   ]
 }

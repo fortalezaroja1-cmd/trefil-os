@@ -2,6 +2,14 @@
 
 Implementación funcional basada en el corte aprobado del 11 de noviembre de 2026.
 
+## Catálogo previo y selector de productos
+
+Ventas incorpora un catálogo maestro para cargar los productos antes de preparar una cotización u orden. Cada ficha conserva SKU, identificador interno, nombre, descripción comercial, categoría, unidad, precio base y estado. Cuando la categoría controla existencias, la ficha crea y enlaza una referencia de Inventarios sin agregar cantidades ni fabricar un ORIGEN.
+
+La creación de cotizaciones y OP utiliza una barra desplegable para buscar por nombre, SKU o ID. El resultado muestra precio y disponibilidad; permite agregar varios productos, elegir bodega, ajustar cantidad y precio y retirar renglones antes de guardar. La factura posterior conserva una copia de los renglones y precios de la OP, de modo que un cambio futuro del catálogo no reescribe documentos anteriores.
+
+Desactivar una ficha la retira de nuevas selecciones y conserva su historial. Las existencias siguen calculándose únicamente desde movimientos de Inventarios; crear un producto no suma stock.
+
 ## Alcance implementado
 
 - Panel comercial integrado en `#ventas`, conservando la estética de Trefil OS.

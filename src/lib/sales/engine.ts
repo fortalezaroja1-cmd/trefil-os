@@ -1,9 +1,9 @@
 import { add, fromCents, money, toCents, validateDate } from '../finance';
 import type { Actor, Money, Support } from '../finance/types';
-import { getInventoryState, getInventoryStock } from '../inventory/engine';
+import { createInventoryItem, getInventoryState, getInventoryStock } from '../inventory/engine';
 import { quantity, quantityValue, subtractQuantity, toMicros } from '../inventory/quantity';
 import type { Quantity } from '../inventory/types';
-import type { ExternalPaymentReport, ExternalWeek, SalesCategory, SalesInvoice, SalesLine, SalesOrder, SalesState, SalesWorkspace } from './types';
+import type { ExternalPaymentReport, ExternalWeek, SalesCatalogProduct, SalesCategory, SalesInvoice, SalesLine, SalesOrder, SalesState, SalesWorkspace } from './types';
 
 const STOCK_CATEGORIES:Record<SalesCategory,string[]>={TFI:['finished'],TFF:['finished'],TFM:[],TFR:['raw_material'],TFC:['scrap'],TFMP:[],TFMI:['asset'],GAR:['finished','raw_material','supply','scrap','asset'],EXTERNAL:['finished']};
 const SERVICE_CATEGORIES=new Set<SalesCategory>(['TFM','TFMP']);
@@ -23,8 +23,16 @@ function normalizeLines(state:SalesWorkspace,lines:Omit<SalesLine,'id'>[],catego
 function sequence(prefix:string,count:number){return `${prefix}${String(count+1).padStart(4,'0')}`;}
 function categoryPrefix(category:SalesCategory){return category==='EXTERNAL'?'EXT':category;}
 
-export function createEmptySalesState():SalesState{return {version:1,customers:[],externalSellers:[],priceLists:[],quotes:[],orders:[],invoices:[],externalReturns:[],externalWeeks:[],paymentReports:[],receipts:[],warranties:[]};}
-export function getSalesState(state:SalesWorkspace):SalesState{const source=state.salesModule??createEmptySalesState();return source.receipts?source:{...source,receipts:[]};}
+export function createEmptySalesState():SalesState{return {version:1,customers:[],externalSellers:[],products:[],priceLists:[],quotes:[],orders:[],invoices:[],externalReturns:[],externalWeeks:[],paymentReports:[],receipts:[],warranties:[]};}
+export function getSalesState(state:SalesWorkspace):SalesState{const source=state.salesModule??createEmptySalesState();return {...source,products:source.products??[],receipts:source.receipts??[]};}
+
+export function createSalesCatalogProduct(state:SalesWorkspace,input:{sku:string;name:string;description?:string;category:Exclude<SalesCategory,'GAR'|'EXTERNAL'>;unit:'unit'|'kg'|'m'|'l';unitPrice:Money;inventoryCategory?:string},actor:Actor):SalesWorkspace{
+  auth(state,actor);const sku=text(input.sku,'El SKU').toLocaleUpperCase('es-CO');const name=text(input.name,'El nombre del producto');if(getSalesState(state).products.some(row=>row.sku.toLocaleUpperCase('es-CO')===sku))throw new Error('El SKU comercial ya existe.');const allowed:Exclude<SalesCategory,'GAR'|'EXTERNAL'>[]=['TFI','TFF','TFM','TFR','TFC','TFMP'];if(!allowed.includes(input.category))throw new Error('La categoría comercial no es válida.');const unitPrice=money(input.unitPrice);if(toCents(unitPrice)<0n)throw new Error('El precio no puede ser negativo.');const inventoryType=STOCK_CATEGORIES[input.category][0];let next:SalesWorkspace=state;let inventoryItemId:string|undefined;
+  if(inventoryType){next=createInventoryItem(next,{code:sku,description:name,inventoryType:inventoryType as 'raw_material'|'scrap'|'finished',unit:inventoryType==='finished'?'unit':input.unit,category:text(input.inventoryCategory??'Productos de venta','La categoría de inventario'),active:true},actor);inventoryItemId=getInventoryState(next).items.find(row=>row.code===sku)?.id;}
+  const result=copy(next);const timestamp=now();const product:SalesCatalogProduct={id:id(),sku,name,description:input.description?.trim()||name,category:input.category,unit:inventoryType==='finished'?'unit':input.unit,unitPrice,inventoryItemId,active:true,createdBy:actor.id,createdAt:timestamp,updatedAt:timestamp};result.salesModule.products.push(product);audit(result,actor,'Producto agregado al catálogo comercial','sales_product',product.id);return result;
+}
+
+export function setSalesCatalogProductActive(state:SalesWorkspace,productId:string,active:boolean,actor:Actor):SalesWorkspace{auth(state,actor);const source=getSalesState(state).products.find(row=>row.id===productId);if(!source)throw new Error('El producto comercial no existe.');const next=copy(state);const product=next.salesModule.products.find(row=>row.id===productId)!;product.active=active;product.updatedAt=now();if(product.inventoryItemId){const item=next.inventory?.items.find(row=>row.id===product.inventoryItemId);if(item)item.active=active;}audit(next,actor,active?'Producto comercial activado':'Producto comercial desactivado','sales_product',product.id);return next;}
 
 export function createSalesCustomer(state:SalesWorkspace,input:{name:string;document:string;priceListId?:string},actor:Actor):SalesWorkspace{auth(state,actor);const document=text(input.document,'El documento');if(getSalesState(state).customers.some(row=>row.document===document&&row.active))throw new Error('Ya existe un cliente activo con ese documento.');if(input.priceListId&&!getSalesState(state).priceLists.some(row=>row.id===input.priceListId&&row.active))throw new Error('La lista de precios no está vigente.');const next=copy(state);const record={id:id(),name:text(input.name,'El nombre del cliente'),document,priceListId:input.priceListId||undefined,active:true,createdBy:actor.id,createdAt:now()};next.salesModule.customers.push(record);audit(next,actor,'Cliente creado','sales_customer',record.id);return next;}
 

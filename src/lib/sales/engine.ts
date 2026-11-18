@@ -23,8 +23,8 @@ function normalizeLines(state:SalesWorkspace,lines:Omit<SalesLine,'id'>[],catego
 function sequence(prefix:string,count:number){return `${prefix}${String(count+1).padStart(4,'0')}`;}
 function categoryPrefix(category:SalesCategory){return category==='EXTERNAL'?'EXT':category;}
 
-export function createEmptySalesState():SalesState{return {version:1,customers:[],externalSellers:[],priceLists:[],quotes:[],orders:[],invoices:[],externalReturns:[],externalWeeks:[],paymentReports:[],warranties:[]};}
-export function getSalesState(state:SalesWorkspace):SalesState{return state.salesModule??createEmptySalesState();}
+export function createEmptySalesState():SalesState{return {version:1,customers:[],externalSellers:[],priceLists:[],quotes:[],orders:[],invoices:[],externalReturns:[],externalWeeks:[],paymentReports:[],receipts:[],warranties:[]};}
+export function getSalesState(state:SalesWorkspace):SalesState{const source=state.salesModule??createEmptySalesState();return source.receipts?source:{...source,receipts:[]};}
 
 export function createSalesCustomer(state:SalesWorkspace,input:{name:string;document:string;priceListId?:string},actor:Actor):SalesWorkspace{auth(state,actor);const document=text(input.document,'El documento');if(getSalesState(state).customers.some(row=>row.document===document&&row.active))throw new Error('Ya existe un cliente activo con ese documento.');if(input.priceListId&&!getSalesState(state).priceLists.some(row=>row.id===input.priceListId&&row.active))throw new Error('La lista de precios no está vigente.');const next=copy(state);const record={id:id(),name:text(input.name,'El nombre del cliente'),document,priceListId:input.priceListId||undefined,active:true,createdBy:actor.id,createdAt:now()};next.salesModule.customers.push(record);audit(next,actor,'Cliente creado','sales_customer',record.id);return next;}
 

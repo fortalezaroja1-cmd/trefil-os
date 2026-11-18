@@ -5,7 +5,7 @@
   "profile": "portal",
   "target": "https://project-kmpca.vercel.app",
   "created_at": "2026-11-17T19:24:57+00:00",
-  "updated_at": "2026-11-17T19:30:14+00:00",
+  "updated_at": "2026-11-18T17:25:32+00:00",
   "modules": [
     {
       "id": "identity",
@@ -194,6 +194,132 @@
       "revision": "1bb60c5"
     },
     {
+      "id": "collections_control",
+      "title": "Recaudos verificados y aplicados",
+      "required": true,
+      "state": "implemented",
+      "dependencies": [
+        "access"
+      ],
+      "criteria": [
+        "multi_account",
+        "proof_required",
+        "independent_verification",
+        "multi_invoice",
+        "no_duplicate",
+        "internal_transfer_excluded",
+        "observations_audit"
+      ],
+      "inputs": {
+        "collection_policy": {
+          "state": "received",
+          "evidence": "Solicitud del usuario del 18 de noviembre de 2026",
+          "data_kind": "real",
+          "source": "user_provided",
+          "note": "Comprobante y observaciones; un recaudo puede cubrir varias facturas y entrar por varias cuentas.",
+          "at": "2026-11-18T17:17:04+00:00",
+          "previous": {
+            "state": "pending",
+            "data_kind": null,
+            "source": null,
+            "evidence": null
+          }
+        }
+      },
+      "target_environment": "production",
+      "checks": [
+        {
+          "criterion": "multi_account",
+          "result": "pass",
+          "evidence": "npm test: 259 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T17:25:31+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "proof_required",
+          "result": "pass",
+          "evidence": "npm test: 259 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T17:25:31+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "independent_verification",
+          "result": "pass",
+          "evidence": "npm test: 259 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T17:25:32+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "multi_invoice",
+          "result": "pass",
+          "evidence": "npm test: 259 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T17:25:32+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "no_duplicate",
+          "result": "pass",
+          "evidence": "npm test: 259 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T17:25:32+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "internal_transfer_excluded",
+          "result": "pass",
+          "evidence": "npm test: 259 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T17:25:32+00:00",
+          "stale": false
+        },
+        {
+          "criterion": "observations_audit",
+          "result": "pass",
+          "evidence": "npm test: 259 pruebas aprobadas; npm run build: compilación aprobada",
+          "observed": "El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.",
+          "data_kind": "test",
+          "environment": "test",
+          "revision": "work-in-progress",
+          "project_id": "trefil-os",
+          "at": "2026-11-18T17:25:32+00:00",
+          "stale": false
+        }
+      ],
+      "blocker": null,
+      "scope_decision": null,
+      "verified_environment": null,
+      "revision": "work-in-progress",
+      "spec_ref": "Solicitud del usuario del 18 de noviembre de 2026"
+    },
+    {
       "id": "qa",
       "title": "Verificación del recorrido",
       "required": true,
@@ -205,7 +331,8 @@
         "responsive",
         "primary_action",
         "access",
-        "operations"
+        "operations",
+        "collections_control"
       ],
       "criteria": [
         "end_to_end",
@@ -318,6 +445,138 @@
       "action": "record",
       "module": "access",
       "note": "authorization: pass"
+    },
+    {
+      "at": "2026-11-18T17:17:04+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Se amplió el alcance con collections_control"
+    },
+    {
+      "at": "2026-11-18T17:17:04+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Se amplió el alcance con collections_control"
+    },
+    {
+      "at": "2026-11-18T17:17:04+00:00",
+      "action": "add",
+      "module": "collections_control",
+      "note": "Solicitud del usuario del 18 de noviembre de 2026"
+    },
+    {
+      "at": "2026-11-18T17:17:04+00:00",
+      "action": "invalidate",
+      "module": "collections_control",
+      "note": "Cambio de insumo: collection_policy"
+    },
+    {
+      "at": "2026-11-18T17:17:04+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Cambio de insumo: collection_policy"
+    },
+    {
+      "at": "2026-11-18T17:17:04+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Cambio de insumo: collection_policy"
+    },
+    {
+      "at": "2026-11-18T17:17:04+00:00",
+      "action": "input",
+      "module": "collections_control",
+      "note": "Comprobante y observaciones; un recaudo puede cubrir varias facturas y entrar por varias cuentas."
+    },
+    {
+      "at": "2026-11-18T17:17:10+00:00",
+      "action": "invalidate",
+      "module": "collections_control",
+      "note": "Construyendo el flujo solicitado de recaudos con varias cuentas y facturas."
+    },
+    {
+      "at": "2026-11-18T17:17:10+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Construyendo el flujo solicitado de recaudos con varias cuentas y facturas."
+    },
+    {
+      "at": "2026-11-18T17:17:10+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Construyendo el flujo solicitado de recaudos con varias cuentas y facturas."
+    },
+    {
+      "at": "2026-11-18T17:17:10+00:00",
+      "action": "set",
+      "module": "collections_control",
+      "note": "Construyendo el flujo solicitado de recaudos con varias cuentas y facturas."
+    },
+    {
+      "at": "2026-11-18T17:25:24+00:00",
+      "action": "invalidate",
+      "module": "collections_control",
+      "note": "Dominio, interfaz, validación profunda, auditoría y pruebas construidos; falta comprobar el recorrido con datos reales en producción."
+    },
+    {
+      "at": "2026-11-18T17:25:24+00:00",
+      "action": "invalidate",
+      "module": "qa",
+      "note": "Dominio, interfaz, validación profunda, auditoría y pruebas construidos; falta comprobar el recorrido con datos reales en producción."
+    },
+    {
+      "at": "2026-11-18T17:25:24+00:00",
+      "action": "invalidate",
+      "module": "deployment",
+      "note": "Dominio, interfaz, validación profunda, auditoría y pruebas construidos; falta comprobar el recorrido con datos reales en producción."
+    },
+    {
+      "at": "2026-11-18T17:25:24+00:00",
+      "action": "set",
+      "module": "collections_control",
+      "note": "Dominio, interfaz, validación profunda, auditoría y pruebas construidos; falta comprobar el recorrido con datos reales en producción."
+    },
+    {
+      "at": "2026-11-18T17:25:31+00:00",
+      "action": "record",
+      "module": "collections_control",
+      "note": "multi_account: pass"
+    },
+    {
+      "at": "2026-11-18T17:25:31+00:00",
+      "action": "record",
+      "module": "collections_control",
+      "note": "proof_required: pass"
+    },
+    {
+      "at": "2026-11-18T17:25:32+00:00",
+      "action": "record",
+      "module": "collections_control",
+      "note": "independent_verification: pass"
+    },
+    {
+      "at": "2026-11-18T17:25:32+00:00",
+      "action": "record",
+      "module": "collections_control",
+      "note": "multi_invoice: pass"
+    },
+    {
+      "at": "2026-11-18T17:25:32+00:00",
+      "action": "record",
+      "module": "collections_control",
+      "note": "no_duplicate: pass"
+    },
+    {
+      "at": "2026-11-18T17:25:32+00:00",
+      "action": "record",
+      "module": "collections_control",
+      "note": "internal_transfer_excluded: pass"
+    },
+    {
+      "at": "2026-11-18T17:25:32+00:00",
+      "action": "record",
+      "module": "collections_control",
+      "note": "observations_audit: pass"
     }
   ]
 }

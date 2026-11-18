@@ -15,7 +15,7 @@ const modal=(state:State,operation:Parameters<typeof InventoryOperationModal>[0]
 test('InventoryView starts with five empty inventories and never invents stock or audit events',()=>{
   const state=createEmptyState();const before=JSON.stringify(state);
   const html=renderToStaticMarkup(createElement(InventoryView,{...props(state),cashLinks:createElement('p',null,'Integración de Caja'),supplierOffset:createElement('p',null,'Abonos a proveedor'),reports:createElement('p',null,'Informes de inventario')}));
-  for(const label of ['Propiedad, planta y equipo','Materia prima','Insumos de fabricación','Chatarra','Producto terminado','Catálogo','Movimientos','Conteos','Operaciones especiales','Integraciones','Cierre','Informes'])assert.ok(html.includes(label),label);
+  for(const label of ['Propiedad, planta y equipo','Materia prima','Insumos de fabricación','Chatarra','Producto terminado','Catálogo','Movimientos','Conteos','Operaciones especiales','Abastecimiento','Integraciones','Cierre','Informes'])assert.ok(html.includes(label),label);
   assert.match(html,/Tu inventario de activos empieza vacío/);assert.match(html,/ORIGEN histórico/);assert.match(html,/Pendiente/);
   assert.match(html,/role="tablist"/);assert.match(html,/role="tabpanel"/);assert.match(html,/aria-controls=/);
   assert.equal(JSON.stringify(state),before);assert.equal(getInventoryState(state).items.length,0);assert.equal(getInventoryState(state).movements.length,0);assert.equal(state.audit.length,0);
@@ -45,6 +45,13 @@ test('count sheet requires each physical observation and keeps an absent count d
 test('documentary lot conformity does not pretend a role switch or institutional authentication',()=>{
   const empty=createEmptyState();const before=JSON.stringify(empty);const html=modal(empty,'lot','finished');
   assert.match(html,/Crear el lote no incorpora existencias/);assert.match(html,/dos áreas|Producción y Ventas/);assert.match(html,/Crear lote pendiente/);assert.doesNotMatch(html,/Cambiar perfil|PIN|Aprobar con código/);assert.equal(JSON.stringify(empty),before);
+});
+
+test('procurement and non-order release forms expose thresholds, staged responsibilities and documented variants',()=>{
+  let state=createInventoryItem(createEmptyState(),{code:'QA-INSUMO-COMPRA',description:'Insumo para abastecimiento',inventoryType:'supply',unit:'unit',category:'Prueba aislada',active:true},createEmptyState().members[0]);
+  const policy=modal(state,'stock_policy','supply');assert.match(policy,/Existencia mínima/);assert.match(policy,/Cantidad sugerida por pedido/);assert.match(policy,/Proveedor preferido/);assert.match(policy,/Plazo estimado del proveedor/);
+  const order=modal(state,'purchase_order','supply');for(const label of ['Responsable de solicitar','Responsable de aprobar','Responsable de recibir','Fecha en que se necesita','Programar pedido de compra'])assert.match(order,new RegExp(label));
+  const release=modal(state,'release','supply');for(const label of ['Muestra comercial','Uso interno','Donación autorizada','Baja por daño','Traslado entre bodegas'])assert.match(release,new RegExp(label));assert.match(release,/Soporte de la salida/);
 });
 
 test('exceptions are explicitly pending and never offer local approval or silent adjustment',()=>{

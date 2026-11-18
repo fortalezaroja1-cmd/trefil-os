@@ -3,9 +3,9 @@
 Proyecto: `trefil-os`
 Perfil: portal
 Destino: https://project-kmpca.vercel.app
-Actualizado: 2026-11-18T17:25:32+00:00
+Actualizado: 2026-11-18T17:43:14+00:00
 
-Verificados: 0/10. Listos en entorno requerido: 0/10.
+Verificados: 0/11. Listos en entorno requerido: 0/11.
 Listo para lanzamiento: **no**.
 
 | Módulo | Estado | Entorno | Revisión | Pendiente / siguiente acción |
@@ -18,6 +18,7 @@ Listo para lanzamiento: **no**.
 | access | implemented |  | 1bb60c5 | Insumos: access_policy |
 | operations | planned |  | 1bb60c5 | Insumos: operation_requirements |
 | collections_control | implemented |  | work-in-progress |  |
+| inventory_replenishment | implemented |  | work-in-progress |  |
 | qa | planned |  | 1bb60c5 |  |
 | deployment | planned |  | 1bb60c5 |  |
 
@@ -71,6 +72,18 @@ Criterios: multi_account, proof_required, independent_verification, multi_invoic
 - no_duplicate: pass, test, revisión work-in-progress. Evidencia: npm test: 259 pruebas aprobadas; npm run build: compilación aprobada. Observado: El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.
 - internal_transfer_excluded: pass, test, revisión work-in-progress. Evidencia: npm test: 259 pruebas aprobadas; npm run build: compilación aprobada. Observado: El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.
 - observations_audit: pass, test, revisión work-in-progress. Evidencia: npm test: 259 pruebas aprobadas; npm run build: compilación aprobada. Observado: El motor y la interfaz aplican el control solicitado sin marcar facturas pagadas por el comprobante.
+
+### Inventario, mínimos y pedidos de compra
+
+Criterios: production_receipts, order_outputs, alternate_outputs, stage_responsibilities, minimum_alerts, purchase_planning, spending_average.
+
+- production_receipts: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
+- order_outputs: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
+- alternate_outputs: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
+- stage_responsibilities: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
+- minimum_alerts: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
+- purchase_planning: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
+- spending_average: pass, test, revisión work-in-progress. Evidencia: npm test: 263 pruebas aprobadas; npm run build: compilación aprobada; revisión visual local de Inventarios. Observado: El flujo solicitado opera con datos de prueba sin crear existencias, compras ni pagos ficticios.
 
 ### Verificación del recorrido
 

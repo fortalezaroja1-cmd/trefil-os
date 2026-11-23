@@ -23,6 +23,15 @@ test("El inventario conserva procedencia, saldos físicos, permisos e idempotenc
     const path =
       "../supabase/migrations/20261123214937_central_inventory_ledger.sql";
     await db.exec(await readFile(new URL(path, import.meta.url), "utf8"));
+    await db.exec(
+      await readFile(
+        new URL(
+          "../supabase/migrations/20261123222132_central_inventory_available_presentations.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
     await db.exec("set role anon");
     await assert.rejects(
       db.query("select public.central_inventory()"),
@@ -48,6 +57,7 @@ test("El inventario conserva procedencia, saldos físicos, permisos e idempotenc
       total: number;
       items: {
         reported: number | null;
+        available_presentations: number | null;
         code: string | null;
         balances: { physical: number; reserved: number; available: number }[];
       }[];
@@ -63,6 +73,10 @@ test("El inventario conserva procedencia, saldos físicos, permisos e idempotenc
     assert.equal((await snapshot("alegra")).items[0].reported, null);
     assert.equal((await snapshot("wired")).items[0].reported, 74);
     assert.equal((await snapshot("fisico")).total, 0);
+    assert.equal(
+      (await snapshot("wired")).items[0].available_presentations,
+      null,
+    );
     await assert.rejects(
       db.query("select * from inventory_hub.movements"),
       /permission denied/,
@@ -112,6 +126,7 @@ test("El inventario conserva procedencia, saldos físicos, permisos e idempotenc
     assert.equal(balance.physical, 75);
     assert.equal(balance.available, 75);
     assert.equal(balance.reserved, 0);
+    assert.equal((await snapshot("wired")).items[0].available_presentations, 0);
     assert.equal((await snapshot("wired")).items[0].reported, 74);
   } finally {
     await db.close();

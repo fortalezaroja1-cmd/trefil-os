@@ -1,0 +1,227 @@
+.plant-shell {
+  max-width: 1380px;
+  margin: auto;
+  padding: 24px clamp(16px, 4vw, 64px) 72px;
+  color: var(--ink);
+}
+.plant-shell > header,
+.plant-heading,
+.plant-row,
+.plant-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.plant-shell > header {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.plant-shell header a,
+.plant-title,
+.plant-heading > div,
+.plant-actions,
+.plant-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.plant-title {
+  margin: 32px 0;
+  gap: 16px;
+}
+.plant-title > svg {
+  color: var(--brand-navy);
+  width: 42px;
+  height: 42px;
+  background: var(--brand-yellow-soft);
+  padding: 8px;
+  border-radius: 10px;
+}
+.plant-title small {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.plant-title h1 {
+  font-size: clamp(24px, 3.6vw, 40px);
+}
+.plant-layout {
+  display: grid;
+  grid-template-columns: 225px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.plant-layout nav,
+.plant-layout article,
+.plant-editor {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+}
+.plant-layout nav {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+}
+.plant-layout nav button {
+  padding: 10px 13px;
+  text-align: left;
+  border-radius: 6px;
+}
+.plant-layout nav button[aria-current="page"] {
+  background: var(--brand-navy);
+  color: white;
+  font-weight: 650;
+}
+.plant-heading {
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.plant-heading h2 {
+  font-size: 19px;
+}
+.plant-heading button:not(.button),
+.plant-actions button,
+.plant-row button,
+.plant-editor button:not(.button) {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--brand-navy);
+}
+.plant-shell fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.plant-editor {
+  margin: 14px 0;
+  background: #fafbfd;
+}
+.plant-login {
+  max-width: 430px;
+}
+.plant-editor label,
+.plant-editor > fieldset {
+  display: grid;
+  gap: 7px;
+}
+.plant-editor label {
+  font-weight: 600;
+  margin: 8px 0;
+}
+.plant-fields,
+.plant-details,
+.plant-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(235px, 100%), 1fr));
+  gap: 8px 16px;
+}
+.plant-editor :is(input:not([type="checkbox"]), select, textarea),
+.plant-search input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #c7d2df;
+  border-radius: 7px;
+  background: white;
+  color: var(--ink);
+  min-width: 0;
+}
+.plant-editor .plant-checks label {
+  display: flex;
+  align-items: center;
+  font-weight: 450;
+}
+.plant-lines fieldset {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+}
+.plant-lines legend {
+  font-weight: 700;
+  padding-right: 8px;
+}
+.plant-row,
+.plant-item {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.plant-row small,
+.plant-item small,
+.plant-metrics small {
+  display: block;
+  color: var(--muted);
+}
+.plant-item summary {
+  cursor: pointer;
+}
+.plant-state {
+  border-radius: 15px;
+  background: #eaf1f7;
+  padding: 3px 10px;
+}
+.plant-details {
+  margin: 14px 0;
+  font-size: 13px;
+}
+.plant-details dt {
+  color: var(--muted);
+}
+.plant-details dd {
+  margin: 2px 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.plant-actions {
+  flex-wrap: wrap;
+}
+.plant-search {
+  max-width: 520px;
+}
+.plant-empty,
+.plant-error,
+.plant-notice,
+.plant-metrics > div {
+  padding: 16px;
+  margin: 12px 0;
+  border-radius: 8px;
+  background: #eff4f8;
+}
+.plant-error {
+  background: #fff0ea;
+  color: #82371e;
+}
+.plant-notice {
+  background: #eef8ef;
+  color: #285c40;
+}
+.plant-metrics strong {
+  font-size: 25px;
+}
+.plant-link {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--brand-navy);
+  text-decoration: underline;
+}
+@media (max-width: 800px) {
+  .plant-layout {
+    grid-template-columns: 1fr;
+  }
+  .plant-layout nav {
+    display: flex;
+    overflow-x: auto;
+  }
+  .plant-layout nav button {
+    white-space: nowrap;
+  }
+  .plant-shell {
+    padding: 16px;
+  }
+  .plant-title {
+    margin: 20px 0;
+  }
+}

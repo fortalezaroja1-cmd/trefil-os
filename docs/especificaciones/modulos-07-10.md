@@ -1,6 +1,20 @@
 # Producción y Control Administrativo
 
-**Versión funcional del 23 de noviembre de 2026. Incorporación al plan el 24 de noviembre.** Los dos documentos consolidados son la referencia de desarrollo. El estado inicial de los 17 apartados de esta matriz es **planificado**. Las funciones existentes indicadas como punto de integración requieren una prueba conjunta antes de habilitar el proceso para el equipo.
+**Especificaciones del 23 de noviembre de 2026. Primera implementación institucional del 24 de noviembre.** Los 17 apartados describen el alcance acordado. Las pruebas de aceptación de cada fila conservan su carácter de requisito hasta que se documente su verificación.
+
+## Disponible en la plataforma
+
+Desde el menú principal, Producción abre las órdenes de trabajo, fichas, rótulos, movimientos, recuperación, costos, precios y garantías. Control Administrativo abre los permisos, las novedades, el panel gerencial, los proyectos, la documentación y la auditoría. Ambos utilizan la identidad de Equipo y guardan las operaciones en la base institucional.
+
+1. El Creador asigna el perfil y las funciones en **Control Administrativo → Usuarios y permisos**. Para movimientos físicos, Equipo debe conceder también el permiso de registro de inventario. La verificación de referencias y el conteo de apertura requieren aprobación de Inventarios.
+2. En **Inventario central**, vincular cada código comercial a su referencia física, unidad y conversión. Registrar la existencia contada por bodega. Las existencias importadas y los saldos físicos tienen procedencias distintas.
+3. Crear la ficha con la ruta y la fórmula de materiales. Abrir la OT con el acta, fechas, responsables y bodega de insumos de cada referencia. La OT muestra reservas y faltantes. En su cierre se informa el consumo adicional real y se libera el material pendiente.
+4. Producción verifica las etapas y registra el lote y las entregas. La persona que recibe comprueba la cantidad. Una diferencia conserva el conteo inicial y genera un caso compartido con Control. Al aceptar la cantidad exacta, el libro físico registra la entrada. Los cortes de carreta reservan y despachan contra la OP confirmada por Ventas.
+5. Control muestra saldos de Caja, capital y abonos de Deudas, y conciliaciones por cuenta al corte, sujetos al mismo acceso de cada fuente. Los proyectos conservan sus propios presupuestos y supuestos. Los precios oficiales por SKU se consultan desde el selector de Ventas al añadir productos.
+
+**Verificación independiente con datos de ensayo.** Se comprobaron el acceso por perfil, la revocación, la protección de expedientes, la OT única, el checklist, las diferencias de recepción, la idempotencia, el consumo y la reserva de materiales, las vigencias de precios, el despacho de carreta y la reapertura exclusiva. Las pruebas se ejecutan en una base aislada con el mismo libro de inventario que usa la aplicación.
+
+**Pendientes para adopción integral.** Faltan la equivalencia del cálculo con el archivo exacto `2. Muestras Junio 2026(4).xlsx`, la homologación física de referencias, los cruces automáticos de proveedores con Cartera, el cierre financiero de garantías contra las facturas de Ventas y los indicadores de Nómina. La confirmación de la OP de corte requiere su referencia y su soporte de Ventas. Las operaciones de otros módulos que todavía se guardan en el navegador requieren migración antes de consolidarlas para toda la empresa.
 
 ## Módulo 07 · Producción
 

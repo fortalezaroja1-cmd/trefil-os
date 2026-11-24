@@ -55,6 +55,29 @@ test("El servicio autoriza a cada canal y diferencia un saldo cero de una consul
     ).status,
     401,
   );
+  const shipping = await serveInventory(
+    req(master, "mastershop", {
+      action: "reserve",
+      origin: "wired",
+      order: "WT-1",
+    }),
+    env,
+    rpc,
+  );
+  assert.deepEqual(await shipping.json(), {
+    logisticsOnly: true,
+    stockChanged: false,
+  });
+  assert.equal(
+    (
+      await serveInventory(
+        req(master, "mastershop", { action: "reserve", order: "sin-origen" }),
+        env,
+        rpc,
+      )
+    ).status,
+    409,
+  );
   assert.equal(seen, 0);
   const valid = await serveInventory(
     req(wired, "wired", {

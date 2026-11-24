@@ -57,29 +57,45 @@ export async function serveInventory(
   } catch {
     return response({ error: "Solicitud inválida." }, 400);
   }
+  const version = body.action === "version";
   const read = body.action === "stock";
   const status = body.action === "status";
   if (
+    !version &&
     !read &&
     !status &&
     !["reserve", "cancel", "dispatch"].includes(body.action)
   )
     return response({ error: "Acción inválida." }, 400);
-  const values = read
-    ? { p_channel: channel, p_ids: body.ids }
-    : status
-      ? { p_channel: channel, p_order: body.order }
-      : {
-          p_channel: channel,
-          p_order: body.order,
-          p_action: body.action,
-          p_lines: body.lines ?? [],
-        };
+  if (channel === "mastershop" && !read && !version && !status) {
+    // Shipping a Wired order is another notification about the same sale.
+    if (body.origin === "wired")
+      return response({ logisticsOnly: true, stockChanged: false });
+    if (body.origin !== "mastershop")
+      return response(
+        {
+          error: "Identifica el origen del pedido antes de mover existencias.",
+        },
+        409,
+      );
+  }
+  const values = version
+    ? { p_channel: channel }
+    : read
+      ? { p_channel: channel, p_ids: body.ids }
+      : status
+        ? { p_channel: channel, p_order: body.order }
+        : {
+            p_channel: channel,
+            p_order: body.order,
+            p_action: body.action,
+            p_lines: body.lines ?? [],
+          };
   try {
     const upstream = await send(
       url +
         "/rest/v1/rpc/channel_inventory_" +
-        (read ? "stock" : status ? "status" : "sale"),
+        (version ? "version" : read ? "stock" : status ? "status" : "sale"),
       {
         method: "POST",
         headers: {
@@ -101,11 +117,13 @@ export async function serveInventory(
       );
     }
     return response(
-      read
-        ? { available: result }
-        : status
-          ? { order: result }
-          : { state: result },
+      version
+        ? { version: result }
+        : read
+          ? { available: result }
+          : status
+            ? { order: result }
+            : { state: result },
     );
   } catch {
     return response({ error: "No se pudo verificar el saldo de Trefi." }, 503);

@@ -114,6 +114,9 @@ test("Trefi abastece dos canales, asigna la última unidad una vez y conserva la
       ]),
       /inválidas/,
     );
+    const version = () =>
+      one<string>("select public.channel_inventory_version('wired') v");
+    const before = await version();
     const attempts = await Promise.allSettled([
       sale("wired", "WEB-1", "reserve", web),
       sale("mastershop", "MS-1", "reserve", shop),
@@ -123,6 +126,7 @@ test("Trefi abastece dos canales, asigna la última unidad una vez y conserva la
       String(attempts.find((x) => x.status === "rejected")?.reason),
       /insuficiente/,
     );
+    assert.notEqual(await version(), before);
     const webWon = attempts[0].status === "fulfilled";
     const winner = webWon ? ["wired", "WEB-1"] : ["mastershop", "MS-1"];
     const winLines = webWon ? web : shop;

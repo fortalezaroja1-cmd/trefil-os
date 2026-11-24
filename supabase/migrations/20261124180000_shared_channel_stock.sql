@@ -175,3 +175,14 @@ create function public.channel_inventory_status(p_channel text,p_order text) ret
 language sql security invoker set search_path='' as $$select inventory_hub.order_status(p_channel,p_order)$$;
 revoke all on function inventory_hub.order_status(text,text),public.channel_inventory_status(text,text) from public,anon,authenticated;
 grant execute on function inventory_hub.order_status(text,text),public.channel_inventory_status(text,text) to service_role;
+
+-- A public page can learn that availability changed without learning catalog, order or customer data.
+create function inventory_hub.stock_version(p_channel text) returns text
+language sql stable security definer set search_path='' as $$
+ select md5(coalesce(jsonb_agg(jsonb_build_array(external_id,available) order by external_id)::text,'[]'))
+ from inventory_hub.channel_stock where channel=p_channel
+$$;
+create function public.channel_inventory_version(p_channel text) returns text
+language sql stable security invoker set search_path='' as $$select inventory_hub.stock_version(p_channel)$$;
+revoke all on function inventory_hub.stock_version(text),public.channel_inventory_version(text) from public,anon,authenticated;
+grant execute on function inventory_hub.stock_version(text),public.channel_inventory_version(text) to service_role;

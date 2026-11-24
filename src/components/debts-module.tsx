@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
+import { PlantSuppliers } from './plant-suppliers';
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -301,6 +302,7 @@ function Footer({
 }
 
 export function DebtsModule(props: DebtsModuleProps) {
+  const [showPlant,setShowPlant]=useState(false);
   const [category, setCategory] = useState<DebtCategory>('entities');
   const [tab, setTab] = useState<DebtTab>('portfolio');
   const [dialog, setDialog] = useState<DebtDialog | null>(null);
@@ -375,6 +377,8 @@ export function DebtsModule(props: DebtsModuleProps) {
     setDialog({ kind, debtId, entityId });
   return (
     <div className="debts-workspace">
+      <button className="button button-secondary" onClick={()=>setShowPlant(!showPlant)} aria-expanded={showPlant}>Facturas, abonos y saldos de proveedores de Producción</button>
+      {showPlant && <PlantSuppliers/>}
       <div className="debts-header">
         <div>
           <div className="eyebrow">MÓDULO 03 · OBLIGACIONES Y VENCIMIENTOS</div>

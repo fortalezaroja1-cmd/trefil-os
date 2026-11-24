@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { PlantFinance } from "./plant-finance";
+import { PlantReport } from "./plant-report";
+import { PlantSuppliers } from "./plant-suppliers";
 import { signInWithDocument } from "@/lib/workforce";
 import {
   accessProfiles,
@@ -38,6 +40,7 @@ type Editor = { action: string; row?: Row; member?: Member };
 const actionNames: Record<string, string> = {
   crear: "Crear",
   despachar: "Registrar corte y despacho",
+  conciliar_garantia: "Conciliar devolución y compensación",
   verificar: "Verificar checklist",
   recibir: "Confirmar recepción",
   aprobar: "Aprobar",
@@ -51,6 +54,7 @@ const sectionNames: Record<string, string> = {
   personas: "Usuarios y permisos",
   panel: "Panel gerencial",
   auditoria: "Auditoría",
+  informes: "Informes históricos",
 };
 const label = (k: string) => sections[k]?.name ?? sectionNames[k] ?? k;
 const textValue = (v: unknown) => (v == null ? "" : String(v));
@@ -129,7 +133,7 @@ function renderDetails(data: Record<string, unknown>): ReactNode {
       {Object.entries(data)
         .filter(
           ([k, v]) =>
-            v !== null && v !== "" && !["archivo", "fichaTecnica"].includes(k),
+            v !== null && v !== "" && !["archivo", "clave"].includes(k),
         )
         .map(([k, v]) => (
           <div key={k}>
@@ -166,6 +170,64 @@ async function readPdf(file: File) {
     reader.readAsDataURL(file);
   });
 }
+function WarrantyMovement({
+  item,
+  field,
+  mode,
+  label,
+}: {
+  item: string;
+  field: string;
+  mode: string;
+  label: string;
+}) {
+  const [query, setQuery] = useState(""),
+    [options, setOptions] = useState<{ id: string; etiqueta: string }[]>([]),
+    [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    setOptions([]);
+    setError("");
+    const timer = setTimeout(async () => {
+      const client = getSupabaseClient();
+      if (!client) return;
+      const result = await client.rpc("plant_warranty_sources", {
+        item,
+        mode,
+        search_term: query,
+      });
+      if (active) {
+        if (result.error) setError(result.error.message);
+        else setOptions(result.data ?? []);
+      }
+    }, 180);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [item, mode, query]);
+  return (
+    <fieldset>
+      <legend>{label}</legend>
+      <label>
+        Buscar documento o código
+        <input value={query} onChange={(e) => setQuery(e.target.value)} />
+      </label>
+      <label>
+        Movimiento
+        <select required name={field} defaultValue="" key={query}>
+          <option value="">Selecciona</option>
+          {options.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.etiqueta}
+            </option>
+          ))}
+        </select>
+      </label>
+      {error && <p role="alert">{error}</p>}
+    </fieldset>
+  );
+}
 function EditPanel({
   kind,
   edit,
@@ -190,6 +252,7 @@ function EditPanel({
   const [sheet, setSheet] = useState("");
   const [count, setCount] = useState(1);
   const [materials, setMaterials] = useState(0);
+  const [parts, setParts] = useState(1);
   const [fileError, setFileError] = useState("");
   const forLine =
     action === "verificar" || (action === "seguimiento" && kind === "ot");
@@ -253,6 +316,19 @@ function EditPanel({
           orderLines(row).map((l) => [l.ficha, fd.get("_motivo" + l.ficha)]),
         );
       if (action === "acceso") body.permisos = fd.getAll("_permisos");
+      if (action === "cerrar" && ["rotulo", "recuperacion"].includes(kind))
+        body.partes = Array.from({ length: parts }, (_, i) =>
+          Object.fromEntries(
+            [
+              "clase",
+              "cantidad",
+              "unidad",
+              "factor",
+              "conversion",
+              "destino",
+            ].map((key) => [key, fd.get("_parte" + i + key)]),
+          ),
+        );
       if (action === "cerrar" && kind === "ot")
         body.consumos = Object.fromEntries(
           materialsOf(row).map((m, i) => [m.clave, fd.get("_consumo" + i)]),
@@ -264,6 +340,89 @@ function EditPanel({
   }
   let fields: FieldSpec[] = [];
   if (action === "crear") fields = sections[kind].fields;
+  if (action === "aprobar" && kind === "garantia") {
+    fields = [
+      {
+        key: "solucion",
+        label: "Solución comercial autorizada",
+        choices: ["Reposición", "Reembolso"],
+      },
+    ];
+    if (snapshot.perfil === "GERENTE DE VENTAS")
+      fields.push(
+        {
+          key: "adicionales",
+          label: "Cantidad adicional de venta",
+          type: "number",
+          optional: true,
+        },
+        {
+          key: "lista",
+          label: "Lista vigente para adicionales",
+          optional: true,
+        },
+      );
+  }
+  if (action === "conciliar_garantia" && row) {
+    const solution =
+      row.state === "rechazado"
+        ? "Sin compensación"
+        : String(row.data.solucionAutorizada);
+    fields = [
+      { key: "solucion", label: "Solución autorizada", choices: [solution] },
+      {
+        key: "documentoOriginal",
+        label: "Factura y soporte que acredita el precio pagado por unidad",
+      },
+      {
+        key: "codigoDestino",
+        label: "Código físico del material ya clasificado",
+      },
+      {
+        key: "bodegaDestino",
+        label: "Bodega de clasificación",
+        choices: ["GARANTÍAS - " + String(row.data.destino).toUpperCase()],
+      },
+      {
+        key: "factor",
+        label: "Unidades clasificadas por unidad recibida",
+        type: "number",
+      },
+      {
+        key: "conversion",
+        label: "Soporte de conversión si el factor difiere de 1",
+        optional: true,
+      },
+    ];
+    if (solution === "Reembolso")
+      fields.push(
+        {
+          key: "compensacion",
+          label: "Consecutivo del egreso original en Caja",
+        },
+        {
+          key: "cliente",
+          label: "Cliente beneficiario, tal como figura en Caja",
+        },
+      );
+    if (solution === "Reposición")
+      fields.push(
+        {
+          key: "costoInterno",
+          label: "Costo interno total de la reposición (COP)",
+          type: "number",
+        },
+        {
+          key: "entregaCliente",
+          label: "Soporte de entrega al cliente sin cobro",
+        },
+      );
+    if (Number(row.data.adicionalesAutorizados) > 0)
+      fields.push({
+        key: "ventaAdicional",
+        label: "Documento de venta separado por los adicionales autorizados",
+      });
+  }
   if (action === "recibir")
     fields = [
       { key: "recibido", label: "Cantidad física recibida", type: "number" },
@@ -292,6 +451,15 @@ function EditPanel({
       fields = sections.ficha.fields.filter((f) =>
         ["ruta", "materiales"].includes(f.key),
       );
+    else if (kind === "recuperacion")
+      fields = [
+        {
+          key: "fisico",
+          label: "Primer peso físico verificado (kg)",
+          type: "number",
+        },
+        { key: "soporte", label: "Soporte del pesaje" },
+      ];
     else if (kind === "expediente")
       fields = sections.expediente.fields.filter((f) => f.key === "archivo");
     else if (kind === "ot")
@@ -451,28 +619,56 @@ function EditPanel({
               }
             />
           ))}
+          {action === "conciliar_garantia" && row && (
+            <>
+              <WarrantyMovement
+                item={row.id}
+                field="clasificacion"
+                mode="clasificacion"
+                label="Entrada física de clasificación"
+              />
+              {row.data.solucionAutorizada === "Reposición" && (
+                <WarrantyMovement
+                  item={row.id}
+                  field="compensacion"
+                  mode="reposicion"
+                  label="Salida física de reposición"
+                />
+              )}
+            </>
+          )}
           {action === "acceso" && (
             <>
               <Input
                 f={{
                   key: "perfil",
                   label: "Perfil organizacional",
-                  choices: accessProfiles,
+                  choices:
+                    snapshot.perfil === "CREADOR"
+                      ? accessProfiles
+                      : [member?.perfil ?? "COLABORADOR"],
                 }}
                 initial={member?.perfil ?? "COLABORADOR"}
               />
               <div className="plant-checks">
-                {snapshot.opciones.map((p) => (
-                  <label key={p}>
-                    <input
-                      type="checkbox"
-                      name="_permisos"
-                      value={p}
-                      defaultChecked={member?.permisos?.includes(p)}
-                    />
-                    {rightsLabels[p]}
-                  </label>
-                ))}
+                {snapshot.opciones
+                  .filter(
+                    (p) =>
+                      snapshot.perfil === "CREADOR" ||
+                      (snapshot.permisos.includes(p) &&
+                        p !== "control.administrar_permisos"),
+                  )
+                  .map((p) => (
+                    <label key={p}>
+                      <input
+                        type="checkbox"
+                        name="_permisos"
+                        value={p}
+                        defaultChecked={member?.permisos?.includes(p)}
+                      />
+                      {rightsLabels[p]}
+                    </label>
+                  ))}
               </div>
             </>
           )}
@@ -513,6 +709,72 @@ function EditPanel({
             {materials > 0 && (
               <button type="button" onClick={() => setMaterials(materials - 1)}>
                 Quitar último material
+              </button>
+            )}
+          </>
+        )}
+        {action === "cerrar" && ["rotulo", "recuperacion"].includes(kind) && (
+          <>
+            {Array.from({ length: parts }, (_, i) => (
+              <fieldset key={i}>
+                <legend>Componente {i + 1}</legend>
+                <div className="plant-fields">
+                  {[
+                    {
+                      key: "clase",
+                      label: "Clasificación",
+                      choices:
+                        kind === "recuperacion"
+                          ? [
+                              "Material limpio",
+                              "Insumo reutilizable",
+                              "Chatarra comercial",
+                              "Descarte",
+                            ]
+                          : [
+                              "Producto regular",
+                              "Cortas",
+                              "Dañado",
+                              "Sobrante",
+                            ],
+                    },
+                    { key: "cantidad", label: "Cantidad", type: "number" },
+                    { key: "unidad", label: "Unidad física" },
+                    {
+                      key: "factor",
+                      label: "Factor a la unidad de conciliación",
+                      type: "number",
+                    },
+                    {
+                      key: "conversion",
+                      label: "Soporte de conversión",
+                      optional: true,
+                    },
+                    { key: "destino", label: "Ubicación o destino" },
+                  ].map((f) => (
+                    <Input
+                      key={f.key}
+                      f={{ ...f, key: "_parte" + i + f.key }}
+                      initial={
+                        f.key === "factor"
+                          ? "1"
+                          : f.key === "unidad"
+                            ? kind === "recuperacion"
+                              ? "kg"
+                              : String(row?.data.unidad ?? "")
+                            : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+            <button type="button" onClick={() => setParts((n) => n + 1)}>
+              Añadir componente
+            </button>
+            {parts > 1 && (
+              <button type="button" onClick={() => setParts((n) => n - 1)}>
+                Quitar último componente
               </button>
             )}
           </>
@@ -712,7 +974,11 @@ export function PlantWorkspace({ area }: { area: Area }) {
         ...(has("archivo.ver") ? ["expediente"] : []),
         ...(has("control.auditar") ? ["auditoria"] : []),
       ]
-    : plantKinds;
+    : [...plantKinds, "informes"];
+  useEffect(() => {
+    if (area === "produccion" && window.location.hash === "#informes")
+      setKind("informes");
+  }, [area]);
   const current = sectionsVisible.includes(kind)
     ? kind
     : (sectionsVisible[0] ?? "");
@@ -786,15 +1052,24 @@ export function PlantWorkspace({ area }: { area: Area }) {
           id: crypto.randomUUID(),
           target: editor.row?.id ?? editor.member?.id ?? crypto.randomUUID(),
         };
-      const { error: err } = await client.rpc("plant_command", {
-        area,
-        action: editor.action,
-        target: request.current.target,
-        expected: editor.row?.version ?? 0,
-        body,
-        reason,
-        request: request.current.id,
-      });
+      const { error: err } =
+        editor.action === "conciliar_garantia"
+          ? await client.rpc("plant_warranty_close", {
+              item: request.current.target,
+              expected: editor.row?.version,
+              request: request.current.id,
+              body,
+              note: reason,
+            })
+          : await client.rpc("plant_command", {
+              area,
+              action: editor.action,
+              target: request.current.target,
+              expected: editor.row?.version ?? 0,
+              body,
+              reason,
+              request: request.current.id,
+            });
       if (err)
         throw new Error(
           err.code === "23505"
@@ -847,6 +1122,15 @@ export function PlantWorkspace({ area }: { area: Area }) {
       ));
   function actions(r: Row) {
     if (
+      r.kind === "garantia" &&
+      ["aprobado", "rechazado"].includes(r.state) &&
+      has("planta.registrar") &&
+      ["CREADOR", "GERENTE", "GERENTE DE VENTAS", "PRODUCCIÓN"].includes(
+        snapshot?.perfil ?? "",
+      )
+    )
+      return ["conciliar_garantia"];
+    if (
       r.state === "cerrado" ||
       (r.kind === "cierre" && r.state === "aprobado")
     )
@@ -856,6 +1140,18 @@ export function PlantWorkspace({ area }: { area: Area }) {
         : [];
     if (["aceptado", "aprobado", "rechazado"].includes(r.state)) return [];
     const result: string[] = [];
+    const technicalCase =
+      !control &&
+      r.kind === "caso" &&
+      snapshot?.perfil === "PRODUCCIÓN" &&
+      has("planta.registrar") &&
+      has("planta.verificar") &&
+      snapshot.registros.some(
+        (p) =>
+          p.id === r.parent && ["traslado", "recuperacion"].includes(p.kind),
+      );
+    if (technicalCase && r.author !== snapshot?.persona)
+      result.push("aprobar", "rechazar");
     if (
       ["entrega", "traslado"].includes(r.kind) &&
       has("bodega.recibir") &&
@@ -874,6 +1170,14 @@ export function PlantWorkspace({ area }: { area: Area }) {
       (r.kind === "proyecto" && has("control.proyectos")) ||
       (r.kind === "expediente" && has("archivo.editar")) ||
       (r.kind === "ficha" && snapshot?.perfil === "CREADOR") ||
+      (r.kind === "recuperacion" &&
+        (r.data.fisico == null || r.data.fisico === "") &&
+        has("planta.registrar") &&
+        ["PRODUCCIÓN", "CREADOR"].includes(snapshot?.perfil ?? "")) ||
+      (r.kind === "recuperacion" &&
+        (r.data.fisico == null || r.data.fisico === "") &&
+        has("planta.registrar") &&
+        ["CREADOR", "PRODUCCIÓN"].includes(snapshot?.perfil ?? "")) ||
       (r.kind === "ot" && has("planta.registrar")) ||
       (r.kind === "caso" &&
         has(control ? "control.seguimiento" : "planta.registrar"))
@@ -1014,6 +1318,18 @@ export function PlantWorkspace({ area }: { area: Area }) {
                 </a>
               )}
               {current === "panel" && <PlantFinance />}
+              {current === "informes" && <PlantReport />}
+              {(current === "servicio" ||
+                (current === "caso" && control && has("control.aprobar"))) && (
+                <PlantSuppliers
+                  write={!control && has("planta.registrar")}
+                  approve={
+                    control && ["GERENTE", "CREADOR"].includes(snapshot.perfil)
+                  }
+                  actor={snapshot.persona}
+                  revision={snapshot.corte}
+                />
+              )}
               {["ficha", "entrega", "carreta", "conteo"].includes(current) && (
                 <a className="plant-link" href="/inventario-central/">
                   Verificar códigos y existencias en Inventario central
@@ -1031,7 +1347,14 @@ export function PlantWorkspace({ area }: { area: Area }) {
                         </small>
                       </div>
                       {m.perfil !== "CREADOR" &&
-                        snapshot.perfil === "CREADOR" && (
+                        (snapshot.perfil === "CREADOR" ||
+                          (m.id !== snapshot.persona &&
+                            m.perfil &&
+                            has("control.administrar_permisos") &&
+                            !m.permisos?.includes(
+                              "control.administrar_permisos",
+                            ) &&
+                            m.permisos?.every((p) => has(p)))) && (
                           <button
                             onClick={() =>
                               edit({ action: "acceso", member: m })
@@ -1081,7 +1404,8 @@ export function PlantWorkspace({ area }: { area: Area }) {
                   ))}
                 </>
               ) : (
-                current && (
+                current &&
+                current !== "informes" && (
                   <>
                     <label className="plant-search">
                       <Search size={16} />

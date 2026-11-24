@@ -110,6 +110,7 @@ export function ReportsModule({ state, actor, location, mutate, notify }: ViewPr
 
   const history = state.audit.filter(row => row.entityType === 'report_export').slice(0, 12);
   return <div className="reports-module">
+    <a className="button button-secondary" href="/produccion/#informes">Informe institucional de Producción</a>
     <section className="reports-catalog" aria-label="Catálogo de informes">
       {(Object.keys(reportNames) as ReportKind[]).map(value => <button key={value} className={kind === value ? 'active' : ''} onClick={() => { setKind(value); setError(''); }}>
         <span>{value === 'cash' ? <FileText /> : value === 'inventory' ? <FileSpreadsheet /> : <FileClock />}</span>

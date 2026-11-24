@@ -15,7 +15,12 @@ test("Producción y gobierno comparten casos, conservan versiones y autorizan ca
  create table workforce.people(id uuid primary key,full_name text,active boolean default true,removed_at timestamptz,area text);
  create function workforce.require_person() returns workforce.people language plpgsql as $$
  declare p workforce.people;begin select * into strict p from workforce.people where id=current_setting('test.person')::uuid and active;return p;end $$;
- create function workforce.has_permission(workforce.people,text) returns boolean language sql as $$select $2 in ('inventory_register','inventory_approve')$$;
+ create function workforce.has_permission(workforce.people,text) returns boolean language sql as $$select $2 in ('inventory_view','inventory_register','inventory_approve')$$;
+ create schema private;
+ create function private.has_access(uuid,uuid,text[]) returns boolean language sql as $$select true$$;
+ create table public.financial_transactions(id uuid primary key,reference bigint,organization_id uuid,location_id uuid,kind text,status text,party text,reversal_of uuid,occurred_on date,description text);
+ create table public.accounts(id uuid,kind text,name text);
+ create table public.transaction_entries(transaction_id uuid,account_id uuid,debit numeric,credit numeric);
  create schema alegra;
  create table alegra.import_batches(id integer,status text,completed_at timestamptz);
  create table alegra.products(batch_id integer,source_code text,reference text,name text,unit text);`);
@@ -81,6 +86,31 @@ test("Producción y gobierno comparten casos, conservan versiones y autorizan ca
       ),
     );
     await login(creator);
+    await db.exec("reset role");
+    await db.exec(
+      await readFile(
+        new URL(
+          "../supabase/migrations/20261124144509_plant_settlements_and_reports.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    const cash = randomUUID(),
+      bank = randomUUID();
+    await db.query(
+      "insert into public.financial_transactions(id,reference,kind,status,party,occurred_on,description) values($1,10,'expense','posted','Proveedor ABC',current_date,'Pago conjunto')",
+      [cash],
+    );
+    await db.query(
+      "insert into public.accounts values($1,'bank','Cuenta de prueba')",
+      [bank],
+    );
+    await db.query(
+      "insert into public.transaction_entries values($1,$2,0,100)",
+      [cash, bank],
+    );
+    await login(creator);
     await db.exec(
       "select public.central_inventory_record('TEST','PLANTA','conteo',0,'APERTURA',0,gen_random_uuid()),public.central_inventory_record('COBRE','MATERIA PRIMA','conteo',5,'APERTURA',0,gen_random_uuid())",
     );
@@ -126,6 +156,72 @@ test("Producción y gobierno comparten casos, conservan versiones y autorizan ca
       await cmd("control", "acceso", String(id), { perfil, permisos });
     }
     const file = randomUUID();
+    const recovery = randomUUID();
+    await cmd("produccion", "crear", recovery, {
+      tipo: "recuperacion",
+      titulo: "Recepción parcial",
+      factura: "F-01",
+      material: "Cobre",
+      destino: "Clasificación",
+      facturado: 5,
+      sinPesaje: "Pendiente de báscula",
+    });
+    await cmd(
+      "produccion",
+      "seguimiento",
+      recovery,
+      { fisico: 5, soporte: "Acta báscula" },
+      1,
+    );
+    const classify = (q: number) => ({
+      unidad: "kg",
+      destinos: "Bodega",
+      soporte: "Acta de cierre",
+      conciliado: 5,
+      partes: [
+        {
+          clase: "Material limpio",
+          cantidad: q,
+          unidad: "kg",
+          factor: 1,
+          destino: "Materia prima",
+        },
+      ],
+    });
+    await assert.rejects(cmd("produccion", "cerrar", recovery, classify(4), 2));
+    await cmd("produccion", "cerrar", recovery, classify(5), 2);
+    const partA = randomUUID(),
+      partB = randomUUID(),
+      applicationA = randomUUID(),
+      applicationB = randomUUID();
+    for (const [part, id] of [
+      [partA, "01"],
+      [partB, "02"],
+    ])
+      await cmd("produccion", "crear", part, {
+        tipo: "servicio",
+        titulo: "Trabajo de tercero",
+        proveedor: "Proveedor ABC",
+        factura: id,
+        partida: "Servicio",
+        vencimiento: "2026-11-24",
+        valor: 50,
+        soporte: "Factura",
+      });
+    const apply = (part: string, id: string, op: string, amount: number) =>
+      db.query(
+        "select public.plant_supplier_action($1,$2,$3,$4::jsonb,'Soporte aprobado')",
+        [
+          part,
+          id,
+          op,
+          JSON.stringify({ tipo: "Caja", documento: cash, monto: amount }),
+        ],
+      );
+    await apply(partA, applicationA, "solicitar", 60);
+    await assert.rejects(apply(partA, applicationA, "aprobar", 60));
+    await assert.rejects(apply(partB, applicationB, "solicitar", 41));
+    await apply(partB, applicationB, "solicitar", 40);
     await cmd("control", "crear", file, {
       tipo: "expediente",
       titulo: "Reservado",
@@ -136,6 +232,19 @@ test("Producción y gobierno comparten casos, conservan versiones y autorizan ca
       archivo: "JVBERi0x",
     });
     await login(manager);
+    await apply(partA, applicationA, "aprobar", 60);
+    await apply(partB, applicationB, "aprobar", 40);
+    const balances = await db.query<{
+      s: { id: string; por_cobrar: number; por_pagar: number }[];
+    }>("select public.plant_supplier_accounts() s");
+    assert.equal(
+      Number(balances.rows[0].s.find((i) => i.id === partA)?.por_cobrar),
+      10,
+    );
+    assert.equal(
+      Number(balances.rows[0].s.find((i) => i.id === partB)?.por_pagar),
+      10,
+    );
     assert.ok(
       !JSON.stringify(
         (await db.query("select public.plant_workspace('control')")).rows,
@@ -268,12 +377,66 @@ test("Producción y gobierno comparten casos, conservan versiones y autorizan ca
     await assert.rejects(cmd("produccion", "crear", randomUUID(), cutBody));
     await cmd("produccion", "despachar", cut, { real: 2 }, 1);
     await cmd("produccion", "cerrar", spool, { saldo: 0 }, 1);
+    const warranty = randomUUID(),
+      inId = randomUUID(),
+      outId = randomUUID(),
+      closeId = randomUUID();
+    await login(maker);
+    await cmd("produccion", "crear", warranty, {
+      tipo: "garantia",
+      titulo: "Devolución documentada",
+      factura: "F-PRUEBA",
+      codigo: "TEST",
+      familia: "Cable 7 Hilos dañado",
+      medida: "m",
+      cantidad: 1,
+      pagado: 10,
+      origen: "Verificado",
+      dictamen: "Procede",
+      destino: "Chatarra",
+    });
+    await login(creator);
+    await assert.rejects(cmd("produccion", "aprobar", warranty, {}, 1));
+    await cmd("produccion", "aprobar", warranty, { solucion: "Reposición" }, 1);
+    await db.exec(
+      "select public.central_inventory_record('TEST','GARANTÍAS - CHATARRA','conteo',0,'APERTURA',0,gen_random_uuid())",
+    );
+    await db.query(
+      "select public.central_inventory_record('TEST','GARANTÍAS - CHATARRA','devolucion',1,'CLASIF-1',1,$1)",
+      [inId],
+    );
+    await db.query(
+      "select public.central_inventory_record('TEST','REPOSICION','conteo',1,'APERTURA',0,gen_random_uuid())",
+    );
+    await db.query(
+      "select public.central_inventory_record('TEST','REPOSICION','salida',1,'GAR-SIN-COBRO',1,$1)",
+      [outId],
+    );
+    const proofs = {
+      solucion: "Reposición",
+      documentoOriginal: "F-PRUEBA línea 1",
+      clasificacion: inId,
+      compensacion: outId,
+      codigoDestino: "TEST",
+      bodegaDestino: "GARANTÍAS - CHATARRA",
+      factor: 1,
+      costoInterno: 8,
+      entregaCliente: "Entregada sin cobro",
+    };
+    const settle = (b: unknown) =>
+      db.query(
+        "select public.plant_warranty_close($1,2,$2,$3::jsonb,'Caso de ensayo')",
+        [warranty, closeId, JSON.stringify(b)],
+      );
+    await assert.rejects(settle({ ...proofs, solucion: "Reembolso" }));
+    await settle(proofs);
+    await settle(proofs);
     await db.exec("reset role");
     assert.equal(
       Number(
         (
           await db.query<{ physical: number }>(
-            "select physical from inventory_hub.balances where code='TEST'",
+            "select physical from inventory_hub.balances where code='TEST' and warehouse='PLANTA'",
           )
         ).rows[0].physical,
       ),
@@ -284,6 +447,12 @@ test("Producción y gobierno comparten casos, conservan versiones y autorizan ca
     );
     assert.equal(Number(material.rows[0].physical), 1);
     assert.equal(Number(material.rows[0].reserved), 1);
+    await login(creator);
+    const report = await db.query<{ r: { tipo: string }[] }>(
+      "select public.plant_report((now() at time zone 'America/Bogota')::date,(now() at time zone 'America/Bogota')::date,'ot','TEST',true) r",
+    );
+    assert.equal(report.rows[0].r.length, 1);
+    await db.exec("reset role");
     await db.query("update workforce.people set active=false where id=$1", [
       manager,
     ]);

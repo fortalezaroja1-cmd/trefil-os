@@ -353,6 +353,8 @@ export const rightsLabels: Record<string, string> = {
   "bodega.recibir": "Confirmar recepción física",
   "control.ver": "Entrar a Control Administrativo",
   "control.personas": "Consultar perfiles",
+  "control.administrar_permisos":
+    "Administrar los permisos delegables de otras personas",
   "control.aprobar": "Resolver autorizaciones",
   "control.seguimiento": "Gestionar novedades",
   "control.panel": "Consultar panel gerencial",
@@ -371,9 +373,7 @@ export function ref(row: Row) {
   if (row.kind === "lote" && row.data.numero) return "Lote " + row.data.numero;
   return (sections[row.kind]?.singular ?? row.kind) + " " + row.series;
 }
-export function materialsOf(
-  row?: Row,
-): {
+export function materialsOf(row?: Row): {
   clave: string;
   codigo: string;
   unidad: string;

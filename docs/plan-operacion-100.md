@@ -94,6 +94,8 @@ Ninguna persona debe aprobar sus propias operaciones sensibles. El responsable f
 
 ### Fase 2 — Maestros, Equipo y administración (semanas 4 a 6)
 
+Aplicar los ocho apartados de [Control Administrativo](especificaciones/modulos-07-10.md#módulo-10--control-administrativo). Empezar con cuentas individuales y permisos efectivos por acción. Verificar después autorizaciones y novedades de origen, panel gerencial, proyectos, expedientes privados y auditoría.
+
 **Trabajo**
 
 - Administración directa de personas, cargos, áreas, sedes, roles, funciones y permisos detallados.
@@ -121,8 +123,10 @@ Ninguna persona debe aprobar sus propias operaciones sensibles. El responsable f
 
 #### 3B. Inventario, producción y compras
 
+La [especificación de Producción](especificaciones/modulos-07-10.md#módulo-07--producción) define la OT única activa, las rutas por referencia y la recepción bilateral por partida. El piloto debe cubrir tanto producción propia como producto terminado comprado.
+
 - Materia prima e insumos entran por compra/recepción y salen por consumo de producción u otras salidas documentadas.
-- Producto terminado entra únicamente al aceptar el lote producido y sale por despacho de pedidos, muestras, consumo interno, bajas, donaciones o traslados autorizados.
+- Bodega acepta físicamente el producto terminado de un lote fabricado o de una compra vinculada a OT. Inventarios registra la recepción una sola vez. Las salidas corresponden a despachos de pedidos, muestras, consumo interno, bajas, donaciones o traslados autorizados.
 - Responsables por entrega de Producción, conformidad de Ventas, recepción de Bodega y liberación.
 - Solicitud de compra → cotizaciones → aprobación → orden de compra → recepción → factura del proveedor → pago.
 - Mínimos/máximos, punto de reorden, plazo del proveedor, compromiso abierto y promedio de consumo/gasto.

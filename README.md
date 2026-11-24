@@ -2,6 +2,8 @@
 
 Base modular para el control empresarial exclusivo de Trefil Electric. El espacio local empieza **limpio y en cero**, sin cuentas, movimientos, obligaciones, pagos, conciliaciones, documentos ni auditoría de ejemplo. Conserva el logo institucional original azul y amarillo. Todavía no existe un adaptador financiero que conecte este libro local a Supabase; no introducir información empresarial real hasta verificar esa conexión, los permisos y el respaldo.
 
+El alcance funcional de [Producción y Control Administrativo](docs/especificaciones/modulos-07-10.md) reúne los 17 apartados aprobados el 23 de noviembre de 2026, sus responsables y pruebas de aceptación. El [plan de operación](docs/plan-operacion-100.md) los sitúa en las fases de gobierno, operación e informes.
+
 ## Inicio limpio
 
 `createEmptyState` inicializa solamente Trefil Electric, una sede principal, dos bodegas sin existencias y un perfil técnico `local-owner`. Ese perfil identifica cambios en el navegador: **no representa una cuenta autenticada ni un propietario aprovisionado en Supabase**. Los formularios no precargan acreedores, cuentas, importes, tasas o cuotas ficticias.
